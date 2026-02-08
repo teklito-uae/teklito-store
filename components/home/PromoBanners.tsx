@@ -27,7 +27,7 @@ function PromoCard({ title, subtitle, cta, link, bgClass, image, className }: Ba
         >
             <div className="relative z-10 flex flex-col gap-2">
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">{subtitle}</span>
-                <h3 className="text-3xl md:text-4xl font-black text-white uppercase italic tracking-tighter leading-none mb-4">
+                <h3 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter leading-none mb-4">
                     {title}
                 </h3>
                 <div className="flex items-center gap-2 text-xs font-black text-white uppercase tracking-widest group-hover:gap-4 transition-all">

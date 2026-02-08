@@ -2,7 +2,8 @@ import HeroSection from '@/components/home/HeroSection';
 import CategoryGrid from '@/components/home/CategoryGrid';
 import ProductCarousel from '@/components/product/ProductCarousel';
 import PromoBanners from '@/components/home/PromoBanners';
-import { getFeaturedProducts, getNewArrivals, getBestSellers, getProductsByCategory } from '@/lib/data/products';
+import { getProducts, getProductsByCategory } from '@/lib/actions/products';
+import { getCategories } from '@/lib/actions/categories';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,24 +12,29 @@ import { ArrowRight, Truck, ShieldCheck, Headset, Lock } from 'lucide-react';
 
 import SEOFooter from '@/components/home/SEOFooter';
 
-export default function HomePage() {
-  const featured = getFeaturedProducts(15);
-  const newArrivals = getNewArrivals(15);
-  const bestSellers = getBestSellers(15);
+import PitakaPromotion from '@/components/home/PitakaPromotion';
 
-  // Specific Category Products
-  const mobiles = getProductsByCategory('mobiles').slice(0, 15);
-  const watches = getProductsByCategory('watches').slice(0, 15);
-  const cases = getProductsByCategory('phone-cases').slice(0, 15);
+export default async function HomePage() {
+  const allProducts = await getProducts();
+  const categories = await getCategories();
+
+  // Transformation logic to match previous helper functions
+  const featured = allProducts.filter(p => p.discount && p.discount > 10).slice(0, 15);
+  const newArrivals = [...allProducts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 15);
+  const bestSellers = [...allProducts].sort((a, b) => b.reviewCount - a.reviewCount).slice(0, 15);
+
+  const mobiles = allProducts.filter(p => p.categorySlug === 'mobiles').slice(0, 15);
+  const watches = allProducts.filter(p => p.categorySlug === 'watches').slice(0, 15);
+  const cases = allProducts.filter(p => p.categorySlug === 'phone-cases').slice(0, 15);
 
   return (
     <div className="min-h-screen">
       {/* Hero Section (Main Slider + Deals) */}
       <HeroSection />
 
-      {/* Categories - Mobile Only */}
-      <div className="lg:hidden">
-        <CategoryGrid />
+      {/* Categories - Mobile & Desktop Carousel */}
+      <div className="w-full">
+        <CategoryGrid categories={categories} />
       </div>
 
       {/* Featured Deals */}
@@ -67,6 +73,9 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Pitaka Promotion Section (New Replacement) */}
+      <PitakaPromotion />
+
       {/* Best Sellers */}
       <section className="container mx-auto px-4 py-12 md:py-16">
         <ProductCarousel
@@ -74,13 +83,6 @@ export default function HomePage() {
           products={bestSellers}
           viewAllLink="/products?sort=popular"
         />
-      </section>
-
-      {/* Promo Banners Grid 2 (Reusing or adding more) */}
-      <section className="container mx-auto px-4 py-12 md:py-16 bg-zinc-900 overflow-hidden">
-        <div className="opacity-80">
-          <PromoBanners />
-        </div>
       </section>
 
       {/* Category: Watches */}

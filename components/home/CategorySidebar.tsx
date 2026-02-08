@@ -6,11 +6,10 @@ import {
     SheetContent,
     SheetHeader,
     SheetTitle,
-    SheetClose
 } from '@/components/ui/sheet';
-import { categories } from '@/lib/data/categories';
 import Link from 'next/link';
-import { ChevronRight, Smartphone, Watch, Laptop, Tablet, Headphones, Speaker, LayoutGrid } from 'lucide-react';
+import { ChevronRight, Smartphone, Watch, Laptop, Tablet, Headphones, Speaker, LayoutGrid, Globe, Camera, Zap, Activity, Shield, Navigation } from 'lucide-react';
+import { Category } from '@/lib/types';
 
 const iconMap: Record<string, any> = {
     Smartphone,
@@ -19,15 +18,22 @@ const iconMap: Record<string, any> = {
     Tablet,
     Headphones,
     Speaker,
-    LayoutGrid
+    LayoutGrid,
+    Globe,
+    Camera,
+    Zap,
+    Activity,
+    Shield,
+    Navigation
 };
 
 interface CategorySidebarProps {
     isOpen: boolean;
     onClose: () => void;
+    categories: Category[];
 }
 
-export default function CategorySidebar({ isOpen, onClose }: CategorySidebarProps) {
+export default function CategorySidebar({ isOpen, onClose, categories }: CategorySidebarProps) {
     return (
         <Sheet open={isOpen} onOpenChange={onClose}>
             <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0 flex flex-col bg-white">

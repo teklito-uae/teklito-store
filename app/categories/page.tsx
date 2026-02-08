@@ -1,80 +1,98 @@
-'use client';
-
-import { categories } from '@/lib/data/categories';
-import { categoryMetadata } from '@/lib/data/category-metadata';
-import CategoryDiscoveryGrid from '@/components/category/CategoryDiscoveryGrid';
-import BrandsDiscoveryGrid from '@/components/category/BrandsDiscoveryGrid';
-import HeroCarousel from '@/components/home/HeroCarousel';
+import { getCategories } from '@/lib/actions/categories';
+import CategoryGrid from '@/components/home/CategoryGrid';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
+import {
+    Smartphone,
+    Laptop,
+    Tablet,
+    Headphones,
+    Gamepad2,
+    Box,
+    Monitor,
+    LayoutGrid,
+    Watch,
+    Speaker,
+    Zap,
+    Cable,
+    Camera,
+    Wifi,
+    HardDrive,
+    Cpu,
+    Briefcase,
+    Code,
+    Home
+} from 'lucide-react';
 
-export default function CategoriesDiscoveryPage() {
-    // Top brands for the discovery page
-    const featuredBrands = [
-        { name: 'Apple', icon: 'Apple' },
-        { name: 'Samsung', icon: 'Smartphone' },
-        { name: 'Sony', icon: 'Search' },
-        { name: 'Dell', icon: 'Monitor' },
-        { name: 'Asus', icon: 'Cpu' },
-        { name: 'HP', icon: 'HardDrive' },
-        { name: 'Google', icon: 'Globe' },
-        { name: 'Huawei', icon: 'Shield' },
-        { name: 'OnePlus', icon: 'PlusSquare' },
-        { name: 'Xiaomi', icon: 'Zap' },
-        { name: 'Lenovo', icon: 'Tablet' },
-        { name: 'MSI', icon: 'Dribbble' },
-    ];
+const iconMap: Record<string, any> = {
+    Smartphone,
+    Laptop,
+    Tablet,
+    Headphones,
+    Gamepad2,
+    Box,
+    Monitor,
+    Watch,
+    Speaker,
+    Zap,
+    Cable,
+    Camera,
+    Wifi,
+    HardDrive,
+    Cpu,
+    Briefcase,
+    Code,
+    Home
+};
 
-    // Aggregate all subcategories for the chip cloud
-    const allSubcategories = Object.values(categoryMetadata).flatMap(meta => meta.subcategories);
-    // Shuffle or select top ones? Let's take the first 15 for now to avoid overcrowding
-    const displaySubcategories = allSubcategories.slice(0, 20);
+export default async function CategoriesPage() {
+    const categories = await getCategories();
 
     return (
-        <div className="bg-white min-h-screen pb-20">
-            {/* Top Carousel - Hidden on Mobile */}
-            <div className="hidden md:block pt-4">
-                <div className="container mx-auto px-4">
-                    <HeroCarousel />
-                </div>
+        <div className="container mx-auto px-4 py-8">
+            <div className="flex items-center gap-4 mb-8">
+                <Button variant="ghost" size="icon" asChild>
+                    <Link href="/">
+                        <ArrowLeft className="h-5 w-5" />
+                    </Link>
+                </Button>
+                <h1 className="text-2xl font-black uppercase tracking-tight">All Categories</h1>
             </div>
 
-            <div className="container mx-auto px-4 space-y-12 md:space-y-16 mt-8">
-                {/* Categories Discovery Grid */}
-                <div className="space-y-6">
-                    <div className="flex items-center gap-2">
-                        <div className="h-4 w-1 bg-primary rounded-full" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Shop by Category</span>
-                    </div>
-                    <CategoryDiscoveryGrid categories={categories} />
-
-                    {/* Subcategories Chip Cloud */}
-                    <div className="flex flex-wrap gap-2 pt-2">
-                        {displaySubcategories.map((sub, idx) => (
-                            <Link
-                                key={idx}
-                                href={`/search?q=${sub.slug}`} // Or specific subcat route if available
-                                className="px-3 py-1.5 rounded-full bg-zinc-50 border border-zinc-100 text-[10px] font-bold uppercase tracking-wider text-zinc-500 hover:bg-zinc-100 hover:border-zinc-200 hover:text-black transition-all"
-                            >
-                                {sub.name}
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Brands Discovery Section */}
-                <div className="space-y-6">
-                    {/* ... (Brands content) */}
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <div className="h-4 w-1 bg-black rounded-full" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Featured Brands</span>
-                        </div>
-                        <Link href="/products" className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline">
-                            View All
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {categories.map((category) => {
+                     const Icon = iconMap[category.icon || 'Smartphone'] || Smartphone;
+                     const hasImage = category.image && category.image !== '';
+                     
+                     return (
+                        <Link 
+                            key={category.id} 
+                            href={`/category/${category.slug}`}
+                            className="group flex flex-col items-center bg-zinc-50 rounded-[1.5rem] p-6 hover:bg-white hover:shadow-lg hover:shadow-black/5 transition-all duration-300 border border-zinc-100"
+                        >
+                             <div className={cn(
+                                    "relative w-16 h-16 md:w-20 md:h-20 mb-4 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110",
+                                    hasImage ? "bg-white" : "bg-[#c7f502] text-black"
+                                )}>
+                                    {hasImage ? (
+                                        <Image
+                                            src={category.image!}
+                                            alt={category.name}
+                                            fill
+                                            className="object-contain p-2"
+                                        />
+                                    ) : (
+                                        <Icon strokeWidth={1.5} className="h-8 w-8 md:h-10 md:w-10" />
+                                    )}
+                             </div>
+                             <h3 className="text-sm font-bold uppercase tracking-wide text-center">{category.name}</h3>
+                             <p className="text-[10px] text-zinc-500 mt-1 text-center line-clamp-2">{category.description}</p>
                         </Link>
-                    </div>
-                    <BrandsDiscoveryGrid brands={featuredBrands} />
-                </div>
+                     );
+                })}
             </div>
         </div>
     );

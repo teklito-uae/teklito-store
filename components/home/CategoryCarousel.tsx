@@ -1,24 +1,38 @@
 'use client';
 
 import Link from 'next/link';
-import { Smartphone, Watch, Tag, Headset, Laptop, Gamepad2, Camera } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Smartphone, Watch, Tag, Headset, Laptop, Gamepad2, Camera, Globe, Search, Monitor, HardDrive, Tablet, Cpu, Zap, Activity, Shield, Navigation } from 'lucide-react';
+import { Category } from '@/lib/types';
 
-const categoryItems = [
-    { name: 'MOBILES', slug: 'mobiles', icon: Smartphone },
-    { name: 'WATCHES', slug: 'watches', icon: Watch },
-    { name: 'TOP OFFERS', slug: 'products?filter=featured', icon: Tag },
-    { name: 'AIRPODS', slug: 'category/audio', icon: Headset },
-    { name: 'ELECTRONICS', slug: 'category/electronics', icon: Laptop },
-    { name: 'VIDEO GAMES', slug: 'category/gaming', icon: Gamepad2 },
-    { name: 'CAMERA', slug: 'category/cameras', icon: Camera },
-];
+const iconMap = {
+    Mobiles: Smartphone,
+    Watches: Watch,
+    Audio: Headset,
+    Electronics: Laptop,
+    Gaming: Gamepad2,
+    Cameras: Camera,
+    Default: Globe
+};
 
-export default function CategoryCarousel() {
+interface CategoryCarouselProps {
+    categories: Category[];
+}
+
+export default function CategoryCarousel({ categories }: CategoryCarouselProps) {
+    // Add "Top Offers" as a static item
+    const displayItems = [
+        { name: 'TOP OFFERS', slug: 'products?filter=featured', icon: Tag },
+        ...categories.map(cat => ({
+            name: cat.name,
+            slug: `category/${cat.slug}`,
+            icon: (iconMap as any)[cat.name] || (iconMap as any)[cat.icon as string] || iconMap.Default
+        }))
+    ];
+
     return (
         <div className="w-full bg-white border-b border-zinc-100 overflow-hidden">
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-4 px-4 md:px-8">
-                {categoryItems.map((item) => {
+                {displayItems.map((item) => {
                     const Icon = item.icon;
                     return (
                         <Link

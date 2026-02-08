@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import ProductImage from '@/components/product/ProductImage';
 import { Heart, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { getWishlist } from '@/lib/store/wishlist';
 import { removeFromWishlist } from '@/lib/store/wishlist';
 import { addToCart } from '@/lib/store/cart';
-import { getProductById } from '@/lib/data/products';
+import { getProductById } from '@/lib/utils/product';
+import { getImageUrl } from '@/lib/utils/image';
 import { Product } from '@/lib/types';
 import { toast } from 'sonner';
 
@@ -27,11 +28,12 @@ export default function WishlistPage() {
         return () => window.removeEventListener('wishlist-updated', handleWishlistUpdate);
     }, []);
 
-    const loadWishlist = () => {
+    const loadWishlist = async () => {
         const wishlist = getWishlist();
-        const products = wishlist.productIds
-            .map((id) => getProductById(id))
-            .filter((p): p is Product => p !== undefined);
+        const productsPromises = wishlist.productIds.map((id) => getProductById(id));
+        const products = (await Promise.all(productsPromises)).filter(
+            (p): p is Product => p !== null
+        );
         setWishlistProducts(products);
     };
 
@@ -73,8 +75,8 @@ export default function WishlistPage() {
                     <Card key={product.id} className="overflow-hidden">
                         <Link href={`/products/${product.slug}`}>
                             <div className="relative aspect-square bg-muted">
-                                <Image
-                                    src={product.images[0] || '/images/placeholder.jpg'}
+                                <ProductImage
+                                    src={getImageUrl(product.images, 0)}
                                     alt={product.name}
                                     fill
                                     className="object-cover hover:scale-105 transition-transform duration-300"

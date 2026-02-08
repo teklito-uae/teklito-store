@@ -1,17 +1,44 @@
 'use client';
 
 import { Cart, CartItem, CartItemWithProduct } from '../types';
-import { getProductById } from '../data/products';
+import { getProductById } from '../utils/product';
+import { supabase } from '@/lib/supabase/client';
 
 const CART_STORAGE_KEY = 'teklito-cart';
 
-// TODO: Replace localStorage with API calls to /api/cart
-// Expected endpoints:
-// - GET /api/cart - Get user's cart
-// - POST /api/cart/add - Add item to cart
-// - PUT /api/cart/update - Update item quantity
-// - DELETE /api/cart/remove - Remove item from cart
-// - DELETE /api/cart/clear - Clear entire cart
+// Helper to get current user
+async function getCurrentUser() {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.user || null;
+}
+
+// Sync local cart item to DB
+async function syncItemToDB(item: CartItem, userId: string) {
+    // Check if item exists
+    const { data: existing } = await supabase
+        .from('cart_items')
+        .select('id')
+        .eq('profile_id', userId)
+        .eq('product_id', item.productId)
+        .eq('selected_variants', JSON.stringify(item.selectedVariants)) // Strict match on variants
+        .single();
+
+    if (existing) {
+        await supabase
+            .from('cart_items')
+            .update({ quantity: item.quantity })
+            .eq('id', existing.id);
+    } else {
+        await supabase
+            .from('cart_items')
+            .insert({
+                profile_id: userId,
+                product_id: item.productId,
+                quantity: item.quantity,
+                selected_variants: item.selectedVariants
+            });
+    }
+}
 
 export function getCart(): Cart {
     if (typeof window === 'undefined') {
@@ -108,19 +135,114 @@ export function updateQuantity(
             cart.items[itemIndex].quantity = quantity;
         }
         saveCart(cart);
+
+        // Sync to DB
+        getCurrentUser().then(user => {
+            if (user) {
+                const item = cart.items[itemIndex]; // This might be stale if we spliced, but...
+                // Wait, if we spliced (quantity <= 0), we removed it.
+                // Re-find in modified cart? No, it's gone.
+                // If it was removed locally, we need to remove from DB.
+                // But removeFromCart logic above handles removal?
+                // The splice happens here locally.
+
+                if (quantity <= 0) {
+                    // Reuse remove logic
+                    // We can't call removeFromCart because it recurses/modifies local storage again? 
+                    // No, removeFromCart is exported.
+                    // But here we already modified 'cart'.
+                    // Let's just do the DB delete logic.
+
+                    // ... DB Delete Logic (same as removeFromCart)
+                    syncDBRemove(productId, selectedVariants, user.id);
+                } else {
+                    // Update
+                    const updatedItem = cart.items[itemIndex];
+                    syncItemToDB(updatedItem, user.id);
+                }
+            }
+        });
+    }
+}
+
+async function syncDBRemove(productId: string, selectedVariants: Record<string, string> | undefined, userId: string) {
+    const { data: items } = await supabase
+        .from('cart_items')
+        .select('id, selected_variants')
+        .eq('profile_id', userId)
+        .eq('product_id', productId);
+
+    if (items) {
+        const itemToDelete = items.find(i =>
+            JSON.stringify(i.selected_variants) === JSON.stringify(selectedVariants)
+        );
+        if (itemToDelete) {
+            await supabase.from('cart_items').delete().eq('id', itemToDelete.id);
+        }
     }
 }
 
 export function clearCart(): void {
     saveCart({ items: [], updatedAt: new Date().toISOString() });
+
+    getCurrentUser().then(async user => {
+        if (user) {
+            await supabase.from('cart_items').delete().eq('profile_id', user.id);
+        }
+    });
 }
 
-export function getCartItemsWithProducts(): CartItemWithProduct[] {
+// Function to merge DB cart into local cart on login
+export async function mergeDBCartToLocal() {
+    const user = await getCurrentUser();
+    if (!user) return;
+
+    // Fetch DB items
+    const { data: dbItems } = await supabase
+        .from('cart_items')
+        .select('*')
+        .eq('profile_id', user.id);
+
+    if (!dbItems || dbItems.length === 0) return;
+
+    const cart = getCart();
+    // Simple strategy: DB overwrites local or merges?
+    // Let's merge: Add DB items to local if not present, take max quantity if present.
+    // Or simpler: Trust DB as master if it has data? 
+    // Usually, if I add to cart as guest, then login, I expect guest items to move to account.
+    // So: Push local items to DB, then fetch full DB cart and save to local.
+
+    // 1. Push local items to DB
+    for (const item of cart.items) {
+        await syncItemToDB(item, user.id);
+    }
+
+    // 2. Fetch updated DB cart
+    const { data: updatedDbItems } = await supabase
+        .from('cart_items')
+        .select('*')
+        .eq('profile_id', user.id);
+
+    if (updatedDbItems) {
+        const newItems: CartItem[] = updatedDbItems.map(i => ({
+            productId: i.product_id,
+            quantity: i.quantity,
+            selectedVariants: i.selected_variants
+        }));
+
+        saveCart({
+            items: newItems,
+            updatedAt: new Date().toISOString()
+        });
+    }
+}
+
+export async function getCartItemsWithProducts(): Promise<CartItemWithProduct[]> {
     const cart = getCart();
 
-    return cart.items
-        .map((item) => {
-            const product = getProductById(item.productId);
+    const itemsWithProducts = await Promise.all(
+        cart.items.map(async (item) => {
+            const product = await getProductById(item.productId);
             if (!product) return null;
 
             return {
@@ -128,11 +250,13 @@ export function getCartItemsWithProducts(): CartItemWithProduct[] {
                 product,
             };
         })
-        .filter((item): item is CartItemWithProduct => item !== null);
+    );
+
+    return itemsWithProducts.filter((item): item is CartItemWithProduct => item !== null);
 }
 
-export function getCartTotal(): number {
-    const items = getCartItemsWithProducts();
+export async function getCartTotal(): Promise<number> {
+    const items = await getCartItemsWithProducts();
 
     return items.reduce((total, item) => {
         let price = item.product.price;

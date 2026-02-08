@@ -29,13 +29,12 @@ interface HeroSlide {
 const heroSlides: HeroSlide[] = [
     {
         id: 1,
-        title: 'Shop & Win 1 Million',
-        subtitle: 'NOON MILLIONAIRE',
-        description: '02 FEB - 22 FEB • Use code: DREAMDUBAI',
-        ctaText: 'Use code: DREAMDUBAI',
-        ctaLink: '/products',
-        image: '/images/slider-1.avif',
-        bgGradient: 'from-[#ff8c7a] via-[#f04593] to-[#e91e63]',
+        title: 'Ultimate Gaming Setup',
+        subtitle: 'NEXT GEN PERFORMANCE',
+        description: 'Power up your station with elite gear.',
+        ctaText: 'Shop Gaming',
+        ctaLink: '/category/gaming-pcs',
+        bgGradient: 'from-zinc-900 via-black to-zinc-950',
         textColor: 'text-white',
     },
     {
@@ -124,7 +123,7 @@ export default function HeroCarousel() {
 
                                         {/* Main Title */}
                                         <h2 className={cn(
-                                            "text-h2 font-bold uppercase tracking-tight leading-tight italic",
+                                            "text-h2 font-bold uppercase tracking-tight leading-tight",
                                             slide.textColor
                                         )}>
                                             {slide.title}

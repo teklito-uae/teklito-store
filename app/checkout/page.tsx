@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     ChevronRight,
     CreditCard,
@@ -10,11 +11,15 @@ import {
     Lock,
     Package,
     ArrowLeft,
+    ArrowRight,
     Mail,
     Phone,
     MapPin,
     Building2,
-    Briefcase
+    Briefcase,
+    UserCircle,
+    ShoppingBag,
+    UserPlus
 } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
@@ -24,14 +29,22 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { getCartItemsWithProducts, getCartTotal, clearCart } from '@/lib/store/cart';
 import { CartItemWithProduct } from '@/lib/types';
 import { toast } from 'sonner';
-import Image from 'next/image';
+import ProductImage from '@/components/product/ProductImage';
+import { createOrder } from '@/lib/actions/orders';
+import { supabase } from '@/lib/supabase/client';
+import OrderSuccess from '@/components/checkout/OrderSuccess';
 
 export default function CheckoutPage() {
     const router = useRouter();
     const [cartItems, setCartItems] = useState<CartItemWithProduct[]>([]);
     const [total, setTotal] = useState(0);
+    const [userId, setUserId] = useState<string | null>(null);
     const [paymentMethod, setPaymentMethod] = useState('cod');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [currentStep, setCurrentStep] = useState(1); // 1: Shipping, 2: Payment, 3: Review
+    const [isAuthChoiceMade, setIsAuthChoiceMade] = useState(false);
+    const [tempOrderNumber, setTempOrderNumber] = useState('');
+    const [isSessionLoading, setIsSessionLoading] = useState(true);
 
     const [shippingInfo, setShippingInfo] = useState({
         fullName: '',
@@ -43,17 +56,50 @@ export default function CheckoutPage() {
         country: 'UAE',
     });
 
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [orderId, setOrderId] = useState('');
+    const [finalOrderNumber, setFinalOrderNumber] = useState('');
+
     useEffect(() => {
-        const items = getCartItemsWithProducts();
-        const cartTotal = getCartTotal();
+        const loadData = async () => {
+            const items = await getCartItemsWithProducts();
+            const cartTotal = await getCartTotal();
 
-        if (items.length === 0) {
-            router.push('/cart');
-            return;
-        }
+            if (items.length === 0) {
+                router.push('/cart');
+                return;
+            }
 
-        setCartItems(items);
-        setTotal(cartTotal);
+            setCartItems(items);
+            setTotal(cartTotal);
+
+            // Get User and Pre-fill data
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                const user = session.user;
+                setUserId(user.id);
+
+                // Fetch profile data
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('full_name, phone')
+                    .eq('id', user.id)
+                    .single();
+
+                setShippingInfo(prev => ({
+                    ...prev,
+                    fullName: profile?.full_name || user.user_metadata?.full_name || '',
+                    email: user.email || '',
+                    phone: profile?.phone || user.user_metadata?.phone || '',
+                }));
+
+                // If logged in, we bypass auth gate
+                setIsAuthChoiceMade(true);
+            }
+            setIsSessionLoading(false);
+        };
+
+        loadData();
     }, [router]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,311 +109,510 @@ export default function CheckoutPage() {
         });
     };
 
-    const handlePlaceOrder = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!shippingInfo.fullName || !shippingInfo.email || !shippingInfo.phone || !shippingInfo.address) {
-            toast.error('Missing details', {
-                description: 'Please complete the shipping information.'
-            });
-            return;
+    const nextStep = () => {
+        if (currentStep === 1) {
+            if (!shippingInfo.fullName || !shippingInfo.email || !shippingInfo.phone || !shippingInfo.address) {
+                toast.error('Missing details', {
+                    description: 'Please complete the shipping information.'
+                });
+                return;
+            }
+            setCurrentStep(2);
+        } else if (currentStep === 2) {
+            setCurrentStep(3);
         }
+    };
 
+    const prevStep = () => {
+        if (currentStep > 1) {
+            setCurrentStep(currentStep - 1);
+        }
+    };
+
+    const handlePlaceOrder = async () => {
+        // Generate temp order number for dramatic loader
+        const orderNum = `TK-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
+        setTempOrderNumber(orderNum);
         setIsProcessing(true);
 
-        // Simulate order placement
-        setTimeout(() => {
-            clearCart();
-            toast.success('Order Confirmed!', {
-                description: 'Welcome to the future. Your order is being processed.',
+        try {
+            const result = await createOrder({
+                shippingInfo,
+                paymentMethod,
+                items: cartItems,
+                userId: userId || undefined
             });
-            router.push('/orders');
+
+            if (result.success) {
+                setOrderId(result.orderId || '');
+                setFinalOrderNumber(result.orderNumber || orderNum);
+                setIsSuccess(true);
+                clearCart();
+            } else {
+                toast.error('Order Failed', {
+                    description: result.error || 'Something went wrong. Please try again.'
+                });
+            }
+        } catch (error) {
+            toast.error('An unexpected error occurred');
+            console.error(error);
+        } finally {
             setIsProcessing(false);
-        }, 2000);
+        }
     };
 
     const shippingCost = total >= 50 ? 0 : 5;
     const finalTotal = total + shippingCost;
 
+    if (isSuccess) {
+        return (
+            <OrderSuccess
+                orderId={orderId}
+                orderNumber={finalOrderNumber}
+                items={cartItems}
+                shippingInfo={shippingInfo}
+                total={total}
+                shippingCost={shippingCost}
+            />
+        );
+    }
+
+    if (isSessionLoading) {
+        return (
+            <div className="bg-zinc-50/30 min-h-screen flex flex-col items-center justify-center p-4">
+                <motion.div
+                    animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="flex flex-col items-center gap-4"
+                >
+                    <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center border border-primary/20">
+                        <ShieldCheck className="w-8 h-8 text-primary" />
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">Verifying Identity</p>
+                </motion.div>
+            </div>
+        );
+    }
+
+    if (!userId && !isAuthChoiceMade) {
+        return (
+            <div className="bg-zinc-50/30 min-h-screen p-4 flex flex-col items-center pt-8 md:pt-20">
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="w-full max-w-4xl bg-white rounded-xl md:rounded-3xl shadow-xl overflow-hidden border border-zinc-100 flex flex-col md:flex-row"
+                >
+                    {/* Visual Side */}
+                    <div className="md:w-[45%] bg-black p-6 md:p-10 text-white flex flex-col justify-between relative overflow-hidden">
+                        <div className="relative z-10">
+                            <motion.div
+                                animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }}
+                                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                                className="w-12 h-12 md:w-14 md:h-14 bg-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 border border-primary/30"
+                            >
+                                <ShieldCheck className="w-6 h-6 text-primary" />
+                            </motion.div>
+                            <h2 className="text-xl md:text-2xl font-black uppercase tracking-tighter mb-2 leading-none">The Teklito <span className="text-primary italic">Vault.</span></h2>
+                            <p className="text-zinc-500 font-medium text-[11px] md:text-sm">Secure your tech with industry-leading encryption and member-only protection.</p>
+                        </div>
+
+                        <div className="mt-8 space-y-4 relative z-10 hidden md:block">
+                            {[
+                                { icon: ShieldCheck, text: "Encrypted Payments" },
+                                { icon: Package, text: "Track Every Shipment" },
+                                { icon: ArrowRight, text: "Priority Support" }
+                            ].map((item, i) => (
+                                <div key={i} className="flex items-center gap-3">
+                                    <item.icon className="w-4 h-4 text-primary" />
+                                    <span className="text-[10px] font-bold tracking-widest uppercase text-zinc-400">{item.text}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Decor */}
+                        <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-primary/10 blur-[80px] rounded-full" />
+                    </div>
+
+                    {/* Choice Side */}
+                    <div className="md:w-[55%] p-6 md:p-10 flex flex-col">
+                        <div className="space-y-4 mb-6">
+                            <Button
+                                onClick={() => router.push('/auth/login?redirect=/checkout')}
+                                className="w-full h-14 rounded-lg md:rounded-xl bg-black text-primary hover:bg-zinc-900 group transition-all"
+                            >
+                                <div className="flex items-center gap-3 md:gap-4 text-left w-full px-2">
+                                    <UserCircle className="w-5 h-5" />
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-widest opacity-60">Already a Member</p>
+                                        <p className="text-xs font-bold uppercase tracking-tight">Login to Account</p>
+                                    </div>
+                                </div>
+                            </Button>
+
+                            <div className="relative py-2">
+                                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-100" /></div>
+                                <div className="relative flex justify-center text-[9px] uppercase font-black text-zinc-300 tracking-[0.2em] bg-white px-4">or</div>
+                            </div>
+
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsAuthChoiceMade(true)}
+                                className="w-full h-14 rounded-lg md:rounded-xl border-2 border-zinc-100 hover:border-zinc-200 hover:bg-zinc-50 group transition-all"
+                            >
+                                <div className="flex items-center gap-3 md:gap-4 text-left w-full px-2">
+                                    <ShoppingBag className="w-5 h-5 text-zinc-400 group-hover:text-black transition-colors" />
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">New Guest</p>
+                                        <p className="text-xs font-bold uppercase tracking-tight text-black">Checkout as Guest</p>
+                                    </div>
+                                </div>
+                            </Button>
+                        </div>
+
+                        {/* Benefits Section */}
+                        <div className="mt-auto pt-6 border-t border-zinc-50">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-black mb-3 italic">Why join Teklito?</p>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                                {[
+                                    "Save delivery addresses",
+                                    "View order history",
+                                    "Exclusive member prices",
+                                    "Faster 1-tap checkout",
+                                    "Earn loyalty points",
+                                    "Priority tech support"
+                                ].map((benefit, i) => (
+                                    <div key={i} className="flex items-start gap-2">
+                                        <div className="w-1 h-1 bg-primary rounded-full mt-1.5 flex-shrink-0" />
+                                        <span className="text-[10px] leading-tight text-zinc-500 font-medium">{benefit}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <p className="text-[9px] text-zinc-400 text-center mt-6">
+                                By continuing, you agree to our <span className="underline cursor-pointer hover:text-black">Terms of Service</span>.
+                            </p>
+                        </div>
+                    </div>
+                </motion.div>
+            </div>
+        );
+    }
+
     return (
-        <div className="bg-white min-h-screen pb-20">
+        <div className="bg-zinc-50/30 min-h-screen pb-20 font-sans relative">
+            <AnimatePresence>
+                {isProcessing && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center"
+                    >
+                        <motion.div
+                            animate={{
+                                scale: [1, 1.05, 1],
+                            }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                            className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mb-8 shadow-2xl shadow-primary/40"
+                        >
+                            <Package className="w-10 h-10 text-black" />
+                        </motion.div>
+
+                        <div className="space-y-1 mb-6">
+                            <h2 className="text-xl md:text-3xl font-black text-white uppercase tracking-tighter">Processing Order</h2>
+                            <p className="text-primary font-mono text-xs md:text-sm tracking-widest font-black">{tempOrderNumber}</p>
+                        </div>
+
+                        <p className="text-zinc-500 text-xs md:text-sm font-medium max-w-xs">Generating your high-tech receipt and securing stock across our warehouses.</p>
+
+                        <div className="mt-12 w-64 h-[2px] bg-zinc-900 rounded-full overflow-hidden">
+                            <motion.div
+                                initial={{ x: "-100%" }}
+                                animate={{ x: "100%" }}
+                                transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                                className="w-full h-full bg-primary"
+                            />
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             {/* Minimal Header */}
-            <div className="border-b border-zinc-100 bg-zinc-50/50">
-                <div className="container mx-auto px-4 h-20 flex items-center justify-between">
-                    <Link href="/cart" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-black transition-colors">
-                        <ArrowLeft className="h-3 w-3" />
+            <div className="border-b border-zinc-100 bg-white">
+                <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+                    <Link href="/cart" className="flex items-center gap-2 text-xs font-bold text-zinc-500 hover:text-black transition-colors">
+                        <ArrowLeft className="h-4 w-4" />
                         Back to Cart
                     </Link>
+
+                    {/* Stepper Indicators */}
                     <div className="hidden md:flex items-center gap-8">
-                        {['Shipping', 'Payment', 'Review'].map((step, i) => (
-                            <div key={step} className="flex items-center gap-3">
-                                <span className={`h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-black ${i === 0 ? 'bg-black text-primary' : 'bg-zinc-200 text-zinc-500'}`}>
-                                    {i + 1}
-                                </span>
-                                <span className={`text-[10px] font-black uppercase tracking-widest ${i === 0 ? 'text-black' : 'text-zinc-400'}`}>
-                                    {step}
-                                </span>
-                                {i < 2 && <div className="w-8 h-[1px] bg-zinc-200 mx-2" />}
-                            </div>
-                        ))}
+                        {['Shipping', 'Payment', 'Review'].map((step, i) => {
+                            const stepNum = i + 1;
+                            const isActive = stepNum === currentStep;
+                            const isCompleted = stepNum < currentStep;
+
+                            return (
+                                <div key={step} className="flex items-center gap-3">
+                                    <span className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all
+                                        ${isActive ? 'bg-black text-white' : isCompleted ? 'bg-green-500 text-white' : 'bg-zinc-100 text-zinc-400'}`}>
+                                        {isCompleted ? <ShieldCheck className="h-3 w-3" /> : stepNum}
+                                    </span>
+                                    <span className={`text-[11px] font-bold uppercase tracking-wider transition-colors
+                                        ${isActive ? 'text-black' : 'text-zinc-400'}`}>
+                                        {step}
+                                    </span>
+                                    {i < 2 && <div className={`w-8 h-[1px] mx-2 transition-colors ${stepNum < currentStep ? 'bg-green-500' : 'bg-zinc-100'}`} />}
+                                </div>
+                            );
+                        })}
                     </div>
+
                     <div className="flex items-center gap-2 text-zinc-400">
                         <Lock className="h-3 w-3" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Secure SSL</span>
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Secure</span>
                     </div>
                 </div>
             </div>
 
-            <div className="container mx-auto px-4 py-12">
-                <form onSubmit={handlePlaceOrder} className="flex flex-col lg:flex-row gap-16 xl:gap-24">
-                    {/* LEFT COLUMN: Forms */}
-                    <div className="flex-1 space-y-16">
-                        {/* Section Header */}
-                        <div className="space-y-4">
-                            <h1 className="text-h1 font-bold text-black tracking-tight uppercase leading-tight">
-                                Checkout <span className="text-primary italic">Process</span>
+            <div className="container mx-auto px-4 py-8 max-w-6xl">
+                <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+                    {/* LEFT COLUMN: Steps */}
+                    <div className="flex-1">
+                        <div className="mb-6">
+                            <h1 className="text-2xl font-bold text-black tracking-tight mb-2">
+                                {currentStep === 1 && 'Shipping Details'}
+                                {currentStep === 2 && 'Payment Method'}
+                                {currentStep === 3 && 'Review Order'}
                             </h1>
-                            <p className="text-sm font-bold text-zinc-400 uppercase tracking-widest leading-relaxed">
-                                Complete your order and join the Teklito elite.
+                            <p className="text-sm text-zinc-500">
+                                {currentStep === 1 && 'Please enter your delivery information.'}
+                                {currentStep === 2 && 'Select how you would like to pay.'}
+                                {currentStep === 3 && 'Review your order details before confirming.'}
                             </p>
                         </div>
 
-                        {/* Shipping Details Card */}
-                        <div className="space-y-10 group">
-                            <div className="flex items-center gap-4">
-                                <div className="h-12 w-12 rounded-2xl bg-black flex items-center justify-center shadow-lg group-hover:bg-primary transition-colors duration-500">
-                                    <Truck className="h-5 w-5 text-primary group-hover:text-black transition-colors duration-500" />
-                                </div>
-                                <h2 className="text-xl font-black uppercase tracking-tight text-black">Shipping Information</h2>
-                            </div>
-
-                            <div className="grid md:grid-cols-2 gap-8 bg-zinc-50/50 p-8 md:p-12 rounded-[2.5rem] border border-zinc-100">
-                                <div className="space-y-3 col-span-2 md:col-span-1">
-                                    <Label htmlFor="fullName" className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Receiver Name</Label>
-                                    <div className="relative">
-                                        <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-300" />
-                                        <Input
-                                            id="fullName"
-                                            name="fullName"
-                                            value={shippingInfo.fullName}
-                                            onChange={handleInputChange}
-                                            className="h-14 pl-12 bg-white border-none rounded-xl shadow-sm focus-visible:ring-primary font-bold placeholder:text-zinc-200"
-                                            placeholder="e.g. John Doe"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3 col-span-2 md:col-span-1">
-                                    <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Email Contact</Label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-300" />
-                                        <Input
-                                            id="email"
-                                            name="email"
-                                            type="email"
-                                            value={shippingInfo.email}
-                                            onChange={handleInputChange}
-                                            className="h-14 pl-12 bg-white border-none rounded-xl shadow-sm focus-visible:ring-primary font-bold placeholder:text-zinc-200"
-                                            placeholder="john@example.com"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3 col-span-2">
-                                    <Label htmlFor="phone" className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Mobile Number</Label>
-                                    <div className="relative">
-                                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-300" />
-                                        <Input
-                                            id="phone"
-                                            name="phone"
-                                            type="tel"
-                                            value={shippingInfo.phone}
-                                            onChange={handleInputChange}
-                                            className="h-14 pl-12 bg-white border-none rounded-xl shadow-sm focus-visible:ring-primary font-bold placeholder:text-zinc-200"
-                                            placeholder="+971 50 123 4567"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3 col-span-2">
-                                    <Label htmlFor="address" className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Delivery Address</Label>
-                                    <div className="relative">
-                                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-300" />
-                                        <Input
-                                            id="address"
-                                            name="address"
-                                            value={shippingInfo.address}
-                                            onChange={handleInputChange}
-                                            className="h-14 pl-12 bg-white border-none rounded-xl shadow-sm focus-visible:ring-primary font-bold placeholder:text-zinc-200"
-                                            placeholder="Street, Building, Apartment No."
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <Label htmlFor="city" className="text-[10px] font-black uppercase tracking-widest text-zinc-400">City</Label>
-                                    <div className="relative">
-                                        <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-300" />
-                                        <Input
-                                            id="city"
-                                            name="city"
-                                            value={shippingInfo.city}
-                                            onChange={handleInputChange}
-                                            className="h-14 pl-12 bg-white border-none rounded-xl shadow-sm focus-visible:ring-primary font-bold placeholder:text-zinc-200"
-                                            placeholder="Dubai"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <Label htmlFor="zipCode" className="text-[10px] font-black uppercase tracking-widest text-zinc-400">ZIP / Postcode</Label>
-                                    <Input
-                                        id="zipCode"
-                                        name="zipCode"
-                                        value={shippingInfo.zipCode}
-                                        onChange={handleInputChange}
-                                        className="h-14 px-6 bg-white border-none rounded-xl shadow-sm focus-visible:ring-primary font-bold placeholder:text-zinc-200"
-                                        placeholder="00000"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Payment Method Card */}
-                        <div className="space-y-10 group">
-                            <div className="flex items-center gap-4">
-                                <div className="h-12 w-12 rounded-2xl bg-black flex items-center justify-center shadow-lg group-hover:bg-primary transition-colors duration-500">
-                                    <CreditCard className="h-5 w-5 text-primary group-hover:text-black transition-colors duration-500" />
-                                </div>
-                                <h2 className="text-xl font-black uppercase tracking-tight text-black">Payment Confirmation</h2>
-                            </div>
-
-                            <div className="bg-zinc-50/50 p-8 rounded-[2.5rem] border border-zinc-100">
-                                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                                    <div className="space-y-4">
-                                        <div className={`flex items-center justify-between p-6 rounded-3xl border-2 transition-all cursor-pointer ${paymentMethod === 'cod' ? 'border-primary bg-primary/5' : 'border-white bg-white hover:border-zinc-200'}`}>
-                                            <div className="flex items-center gap-4">
-                                                <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'cod' ? 'border-primary' : 'border-zinc-200'}`}>
-                                                    {paymentMethod === 'cod' && <div className="h-2.5 w-2.5 rounded-full bg-primary" />}
-                                                </div>
-                                                <RadioGroupItem value="cod" id="cod" className="sr-only" />
-                                                <Label htmlFor="cod" className="cursor-pointer space-y-1">
-                                                    <div className="font-black uppercase tracking-widest text-xs">Cash on Delivery</div>
-                                                    <p className="text-[10px] font-bold text-zinc-400">Settlement at point of reception</p>
-                                                </Label>
-                                            </div>
-                                            <Package className={`h-6 w-6 ${paymentMethod === 'cod' ? 'text-primary' : 'text-zinc-200'}`} />
+                        {/* Step 1: Shipping */}
+                        {currentStep === 1 && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                                <div className="bg-white p-6 md:p-8 rounded-[5px] border border-zinc-200 shadow-sm">
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="fullName" className="text-xs font-bold text-zinc-700">Full Name</Label>
+                                            <Input
+                                                id="fullName"
+                                                name="fullName"
+                                                value={shippingInfo.fullName}
+                                                onChange={handleInputChange}
+                                                className="h-10 rounded-[5px] border-zinc-200 focus:ring-black focus:border-black text-sm"
+                                                placeholder="John Doe"
+                                            />
                                         </div>
-
-                                        <div className="p-6 rounded-3xl border-2 border-dashed border-zinc-200 opacity-50 flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                <div className="h-6 w-6 rounded-full border-2 border-zinc-100" />
-                                                <div className="space-y-1">
-                                                    <div className="font-black uppercase tracking-widest text-xs text-zinc-400">Digital Transaction</div>
-                                                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Protocol restricted • Coming Soon</p>
-                                                </div>
-                                            </div>
-                                            <Lock className="h-6 w-6 text-zinc-200" />
+                                        <div className="space-y-2">
+                                            <Label htmlFor="email" className="text-xs font-bold text-zinc-700">Email Address</Label>
+                                            <Input
+                                                id="email"
+                                                name="email"
+                                                type="email"
+                                                value={shippingInfo.email}
+                                                onChange={handleInputChange}
+                                                className="h-10 rounded-[5px] border-zinc-200 focus:ring-black focus:border-black text-sm"
+                                                placeholder="john@example.com"
+                                            />
+                                        </div>
+                                        <div className="space-y-2 col-span-2 md:col-span-1">
+                                            <Label htmlFor="phone" className="text-xs font-bold text-zinc-700">Phone Number</Label>
+                                            <Input
+                                                id="phone"
+                                                name="phone"
+                                                type="tel"
+                                                value={shippingInfo.phone}
+                                                onChange={handleInputChange}
+                                                className="h-10 rounded-[5px] border-zinc-200 focus:ring-black focus:border-black text-sm"
+                                                placeholder="+971 50 000 0000"
+                                            />
+                                        </div>
+                                        <div className="space-y-2 col-span-2">
+                                            <Label htmlFor="address" className="text-xs font-bold text-zinc-700">Delivery Address</Label>
+                                            <Input
+                                                id="address"
+                                                name="address"
+                                                value={shippingInfo.address}
+                                                onChange={handleInputChange}
+                                                className="h-10 rounded-[5px] border-zinc-200 focus:ring-black focus:border-black text-sm"
+                                                placeholder="Street, Building, Apartment No."
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="city" className="text-xs font-bold text-zinc-700">City</Label>
+                                            <Input
+                                                id="city"
+                                                name="city"
+                                                value={shippingInfo.city}
+                                                onChange={handleInputChange}
+                                                className="h-10 rounded-[5px] border-zinc-200 focus:ring-black focus:border-black text-sm"
+                                                placeholder="Dubai"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="zipCode" className="text-xs font-bold text-zinc-700">ZIP / Postcode</Label>
+                                            <Input
+                                                id="zipCode"
+                                                name="zipCode"
+                                                value={shippingInfo.zipCode}
+                                                onChange={handleInputChange}
+                                                className="h-10 rounded-[5px] border-zinc-200 focus:ring-black focus:border-black text-sm"
+                                                placeholder="00000"
+                                            />
                                         </div>
                                     </div>
-                                </RadioGroup>
+                                </div>
+                                <div className="flex justify-end">
+                                    <Button onClick={nextStep} className="h-12 w-full md:w-auto px-8 bg-black text-primary hover:bg-zinc-900 hover:scale-[1.02] active:scale-95 transition-all duration-300 rounded-[5px] text-xs font-black uppercase tracking-wider">
+                                        Continue to Payment
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
+                        )}
+
+                        {/* Step 2: Payment */}
+                        {currentStep === 2 && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                                <div className="bg-white p-6 md:p-8 rounded-[5px] border border-zinc-200 shadow-sm">
+                                    <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-4">
+                                        <div className={`relative flex items-center space-x-4 rounded-[5px] border p-4 cursor-pointer transition-all ${paymentMethod === 'cod' ? 'border-black bg-zinc-50' : 'border-zinc-200 hover:border-zinc-300'}`}>
+                                            <RadioGroupItem value="cod" id="cod" />
+                                            <Label htmlFor="cod" className="flex-1 cursor-pointer">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-bold text-black">Cash on Delivery</span>
+                                                    <Package className="h-5 w-5 text-zinc-500" />
+                                                </div>
+                                                <p className="text-xs text-zinc-500 mt-1">Pay when you receive your order.</p>
+                                            </Label>
+                                        </div>
+
+                                        <div className="relative flex items-center space-x-4 rounded-[5px] border border-zinc-200 p-4 opacity-60 cursor-not-allowed">
+                                            <RadioGroupItem value="card" id="card" disabled />
+                                            <Label htmlFor="card" className="flex-1">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-bold text-zinc-400">Credit Card (Coming Soon)</span>
+                                                    <CreditCard className="h-5 w-5 text-zinc-300" />
+                                                </div>
+                                            </Label>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
+                                <div className="flex justify-between">
+                                    <Button variant="outline" onClick={prevStep} className="h-12 px-8 rounded-[5px] border-zinc-200 text-xs font-bold uppercase tracking-wider hover:bg-zinc-50">
+                                        Back
+                                    </Button>
+                                    <Button onClick={nextStep} className="h-12 w-full md:w-auto px-8 bg-black text-primary hover:bg-zinc-900 hover:scale-[1.02] active:scale-95 transition-all duration-300 rounded-[5px] text-xs font-black uppercase tracking-wider">
+                                        Review Order
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Step 3: Review */}
+                        {currentStep === 3 && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                                <div className="bg-white p-6 md:p-8 rounded-[5px] border border-zinc-200 shadow-sm space-y-6">
+
+                                    {/* Shipping Review */}
+                                    <div className="bg-zinc-50 p-4 rounded-[5px]">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h3 className="text-xs font-bold uppercase tracking-wide text-zinc-500">Shipping To</h3>
+                                            <button onClick={() => setCurrentStep(1)} className="text-[10px] font-bold text-blue-600 hover:underline">Edit</button>
+                                        </div>
+                                        <p className="text-sm font-bold text-black">{shippingInfo.fullName}</p>
+                                        <p className="text-sm text-zinc-600">{shippingInfo.address}, {shippingInfo.city}</p>
+                                        <p className="text-sm text-zinc-600">{shippingInfo.phone}</p>
+                                    </div>
+
+                                    {/* Payment Review */}
+                                    <div className="bg-zinc-50 p-4 rounded-[5px]">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h3 className="text-xs font-bold uppercase tracking-wide text-zinc-500">Payment Method</h3>
+                                            <button onClick={() => setCurrentStep(2)} className="text-[10px] font-bold text-blue-600 hover:underline">Edit</button>
+                                        </div>
+                                        <p className="text-sm font-bold text-black">{paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment'}</p>
+                                    </div>
+
+                                </div>
+
+                                <div className="flex justify-between">
+                                    <Button variant="outline" onClick={prevStep} className="h-12 px-8 rounded-[5px] border-zinc-200 text-xs font-bold uppercase tracking-wider hover:bg-zinc-50">
+                                        Back
+                                    </Button>
+                                    <Button
+                                        onClick={handlePlaceOrder}
+                                        disabled={isProcessing}
+                                        className="h-12 w-full md:w-auto px-12 bg-black text-primary hover:bg-zinc-900 hover:scale-[1.02] active:scale-95 transition-all duration-300 rounded-[5px] text-xs font-black uppercase tracking-wider shadow-lg shadow-primary/10"
+                                    >
+                                        {isProcessing ? 'Processing...' : 'Place Order'}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    {/* RIGHT COLUMN: Order Summary */}
-                    <div className="w-full lg:w-[400px]">
-                        <div className="lg:sticky lg:top-12 space-y-8 bg-white p-8 md:p-10 rounded-[2.5rem] text-black border border-zinc-100 shadow-xl shadow-zinc-200/50">
-                            <div className="space-y-4">
-                                <h3 className="text-2xl font-black uppercase tracking-tighter italic">Order <span className="text-primary NOT-italic">Summary</span></h3>
-                                <div className="h-1 w-12 bg-primary rounded-full" />
-                            </div>
+                    {/* RIGHT COLUMN: Order Summary (Always Visible) */}
+                    <div className="w-full lg:w-[380px] flex-shrink-0">
+                        <div className="sticky top-24 bg-white p-6 rounded-[5px] border border-zinc-200 shadow-sm">
+                            <h2 className="text-lg font-bold text-black mb-6">Order Summary</h2>
 
-                            <div className="space-y-6 max-h-[40vh] overflow-y-auto pr-2 scrollbar-hide py-2">
-                                {cartItems.map((item: CartItemWithProduct, idx: number) => (
-                                    <div key={idx} className="flex gap-4 group">
-                                        <div className="relative w-20 h-20 bg-zinc-50 rounded-xl overflow-hidden flex-shrink-0 border border-zinc-100 p-2">
-                                            <Image
+                            <div className="space-y-4 max-h-[40vh] overflow-y-auto scrollbar-hide mb-6 pr-1">
+                                {cartItems.map((item) => (
+                                    <div key={item.productId} className="flex gap-3">
+                                        <div className="relative w-16 h-16 bg-zinc-50 rounded-[5px] overflow-hidden border border-zinc-100 flex-shrink-0">
+                                            <ProductImage
                                                 src={item.product.images[0]}
                                                 alt={item.product.name}
                                                 fill
-                                                className="object-contain transition-transform group-hover:scale-110"
+                                                className="object-cover"
                                             />
                                         </div>
-                                        <div className="flex-1 space-y-1 min-w-0">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-900 truncate">{item.product.name}</p>
-                                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Qty: {item.quantity}</p>
-                                            <div className="flex flex-wrap gap-1 mt-1">
-                                                {Object.entries(item.selectedVariants || {}).map(([key, val]) => (
-                                                    <span key={key} className="text-[8px] font-black bg-zinc-100 px-2 py-0.5 rounded-full text-zinc-500 uppercase tracking-tighter">{val as string}</span>
-                                                ))}
-                                            </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-bold text-zinc-900 line-clamp-2 leading-tight">{item.product.name}</p>
+                                            <p className="text-[10px] text-zinc-500 mt-1">Qty: {item.quantity}</p>
                                         </div>
-                                        <div className="text-sm font-black whitespace-nowrap text-zinc-900">
+                                        <div className="text-xs font-bold text-zinc-900">
                                             ${(item.product.price * item.quantity).toFixed(2)}
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="space-y-4 pt-6 border-t border-zinc-100">
-                                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                                    <span>Sub-Registry Total</span>
-                                    <span className="text-black">${total.toFixed(2)}</span>
+                            <Separator className="bg-zinc-100 my-4" />
+
+                            <div className="space-y-3">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-zinc-500">Subtotal</span>
+                                    <span className="font-bold text-black">${total.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-zinc-400">
-                                    <span>Logistics Fee</span>
-                                    <span className={shippingCost === 0 ? 'text-primary font-black' : 'text-black'}>
-                                        {shippingCost === 0 ? 'PROTOCOL FREE' : `$${shippingCost.toFixed(2)}`}
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-zinc-500">Shipping</span>
+                                    <span className="font-bold text-black">
+                                        {shippingCost === 0 ? 'Free' : `$${shippingCost.toFixed(2)}`}
                                     </span>
                                 </div>
-                                <div className="pt-6 border-t border-zinc-100 flex justify-between items-end">
-                                    <div className="space-y-1">
-                                        <div className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Final Settlement</div>
-                                        <div className="text-4xl font-black tracking-tighter leading-none text-black">${finalTotal.toFixed(2)}</div>
-                                    </div>
-                                    <div className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest text-right">VAT included • Final price</div>
+                                <div className="flex justify-between items-baseline pt-2 border-t border-zinc-100 mt-2">
+                                    <span className="text-base font-bold text-black">Total</span>
+                                    <span className="text-2xl font-black text-black">${finalTotal.toFixed(2)}</span>
                                 </div>
                             </div>
 
-                            <Button
-                                type="submit"
-                                disabled={isProcessing}
-                                className="w-full h-16 bg-primary hover:bg-black text-black hover:text-white font-black uppercase tracking-widest text-xs rounded-2xl transition-all duration-300 transform active:scale-[0.98] mt-6 shadow-[0_10px_30px_rgba(199,245,2,0.3)] shadow-primary/20 group"
-                            >
-                                {isProcessing ? (
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-4 w-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                                        <span>Syncing...</span>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2">
-                                        <span>Confirm Access</span>
-                                        <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                    </div>
-                                )}
-                            </Button>
-
-                            {/* Trust Features below CTA */}
-                            <div className="grid grid-cols-2 gap-4 pt-4">
-                                <div className="flex items-center gap-2 p-3 bg-zinc-50 rounded-xl border border-zinc-100 group hover:border-primary/30 transition-colors">
-                                    <ShieldCheck className="h-4 w-4 text-primary" />
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400">Encrypted</span>
-                                </div>
-                                <div className="flex items-center gap-2 p-3 bg-zinc-50 rounded-xl border border-zinc-100 group hover:border-primary/30 transition-colors">
-                                    <Truck className="h-4 w-4 text-primary" />
-                                    <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400">Tracked</span>
-                                </div>
+                            <div className="mt-6 flex items-center justify-center gap-2 text-[10px] text-zinc-400 font-medium">
+                                <ShieldCheck className="h-3 w-3" />
+                                Secure Checkout
                             </div>
                         </div>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     );
+}
+
+// Helper components that were likely missing or assumed
+function Separator({ className }: { className?: string }) {
+    return <div className={`h-[1px] w-full ${className || 'bg-zinc-200'}`} />;
 }

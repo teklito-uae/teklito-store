@@ -1,6 +1,7 @@
 'use client';
 
-import Image from 'next/image';
+
+import ProductImage from './ProductImage';
 import Link from 'next/link';
 import { Heart, Plus, Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { toggleWishlist, isInWishlist } from '@/lib/store/wishlist';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { getImageUrl, getAllImages } from '@/lib/utils/image';
 
 interface ProductCardProps {
     product: Product;
@@ -80,8 +82,8 @@ export default function ProductCard({ product }: ProductCardProps) {
 
                     {/* Product Image */}
                     <div className="relative w-full h-full rounded-xl overflow-hidden">
-                        <Image
-                            src={product.images[currentImageIndex] || '/images/placeholder.jpg'}
+                        <ProductImage
+                            src={getImageUrl(product.images, currentImageIndex)}
                             alt={product.name}
                             fill
                             className="object-contain p-2"
@@ -91,7 +93,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
                     {/* Pagination Dots (Simplified) */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1 z-20">
-                        {product.images.slice(0, 5).map((_, i) => (
+                        {getAllImages(product.images).slice(0, 5).map((_, i) => (
                             <div
                                 key={i}
                                 className={cn(

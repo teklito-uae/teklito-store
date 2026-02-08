@@ -2,10 +2,11 @@ import type { Metadata } from 'next';
 import { Poppins } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/layout/Header';
-import CategoryBar from '@/components/layout/CategoryBar';
 import Footer from '@/components/layout/Footer';
 import MobileNav from '@/components/layout/MobileNav';
+import AnnouncementBar from '@/components/layout/AnnouncementBar';
 import { Toaster } from '@/components/ui/sonner';
+import { getCategories } from '@/lib/actions/categories';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -25,19 +26,19 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const categories = await getCategories();
+
   return (
     <html lang="en">
       <body className={`${poppins.className} bg-white text-black relative font-sans`}>
         <div className="flex flex-col min-h-screen relative z-10">
-          <Header />
-          <div className="hidden lg:block sticky top-0 z-40 w-full bg-white/95 backdrop-blur-sm border-b border-zinc-100 shadow-sm">
-            <CategoryBar />
-          </div>
+          <AnnouncementBar categories={categories} />
+          <Header categories={categories} />
           <main className="flex-1 pb-16 lg:pb-0">{children}</main>
           <Footer />
           <MobileNav />

@@ -2,21 +2,36 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingCart, Heart, User, Search, Menu, LayoutGrid } from 'lucide-react';
+import { ShoppingCart, Heart, Search, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useState, useEffect } from 'react';
 import { getCartItemCount } from '@/lib/store/cart';
 import { getWishlistCount } from '@/lib/store/wishlist';
-import MobileSearchOverlay from './MobileSearchOverlay';
 import CategorySidebar from '@/components/home/CategorySidebar';
+import SearchDialog from '@/components/shared/SearchDialog';
+import UserDropdown from '@/components/layout/UserDropdown';
+import { supabase } from '@/lib/supabase/client';
+import { cn } from '@/lib/utils';
+import { Category } from '@/lib/types';
 
-export default function Header() {
+interface HeaderProps {
+    categories: Category[];
+}
+
+export default function Header({ categories }: HeaderProps) {
     const [cartCount, setCartCount] = useState(0);
     const [wishlistCount, setWishlistCount] = useState(0);
-    const [searchQuery, setSearchQuery] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [user, setUser] = useState<any>(null);
+    const [profile, setProfile] = useState<any>(null);
+
+    // Filter main categories for desktop nav (limit to 4-5)
+    // Actually, user wants "All Categories" as marquee in top bar.
+    // For main navbar, let's keep the most popular ones or just links.
+    const mainCategories = categories.slice(0, 5);
 
     useEffect(() => {
         setCartCount(getCartItemCount());
@@ -25,167 +40,193 @@ export default function Header() {
         const handleCartUpdate = () => setCartCount(getCartItemCount());
         const handleWishlistUpdate = () => setWishlistCount(getWishlistCount());
 
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 40);
+        };
+
+        const getUser = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            const currentUser = session?.user || null;
+            setUser(currentUser);
+
+            if (currentUser) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .single();
+                setProfile(profile);
+            } else {
+                setProfile(null);
+            }
+        };
+
         window.addEventListener('cart-updated', handleCartUpdate);
         window.addEventListener('wishlist-updated', handleWishlistUpdate);
+        window.addEventListener('scroll', handleScroll);
+
+        getUser();
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            const currentUser = session?.user || null;
+            setUser(currentUser);
+
+            if (currentUser) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .single();
+                setProfile(profile);
+            } else {
+                setProfile(null);
+            }
+        });
 
         return () => {
             window.removeEventListener('cart-updated', handleCartUpdate);
             window.removeEventListener('wishlist-updated', handleWishlistUpdate);
+            window.removeEventListener('scroll', handleScroll);
+            subscription.unsubscribe();
         };
     }, []);
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (searchQuery.trim()) {
-            window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
-        }
-    };
+    // Styles based on scroll state
+    const headerBg = isScrolled ? 'bg-black/95 backdrop-blur-md border-zinc-900 shadow-md' : 'bg-white border-zinc-100';
+    const textColor = isScrolled ? 'text-white' : 'text-black';
+    const primaryText = isScrolled ? 'text-primary' : 'text-black'; // "use our primary color for text"
+    const iconColor = isScrolled ? 'text-primary' : 'text-zinc-800';
+    const inputBg = isScrolled ? 'bg-zinc-900 border-primary/30 text-white placeholder:text-zinc-500' : 'bg-zinc-50 border-zinc-100 text-black';
+    const logoBrightness = isScrolled ? 'brightness-0 invert' : ''; // White logo on black
 
     return (
-        <header className="w-full bg-white text-black border-b border-zinc-100 lg:sticky lg:top-0 z-50">
-            {/* Top Bar - Desktop Only */}
-            <div className="hidden lg:block bg-zinc-50 border-b border-zinc-100">
-                <div className="container mx-auto px-4 py-2">
-                    <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-zinc-500">
-                        <p className="flex items-center gap-2">
-                            <span className="h-2 w-2 rounded-full bg-primary" />
-                            Free shipping on orders over $100
-                        </p>
-                        <div className="flex items-center gap-6">
-                            <Link href="/track-order" className="hover:text-black">Track Order</Link>
-                            <Link href="/help" className="hover:text-black">Help Center</Link>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Main Header */}
-            <div className="container mx-auto px-4 py-3">
-                <div className="flex items-center justify-between gap-4">
-                    {/* Left: Mobile "All Categories" */}
-                    <div className="flex items-center gap-1 lg:hidden">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-zinc-800"
-                            onClick={() => setIsCategoryOpen(true)}
-                        >
-                            <LayoutGrid className="h-5 w-5" />
-                        </Button>
-                    </div>
-
-                    {/* Logo */}
-                    <Link href="/" className="flex items-center group relative lg:mr-auto pl-2 md:pl-0">
-                        <Image
-                            src="/images/teklito-logo.webp"
-                            alt="TEKLITO Logo"
-                            width={110}
-                            height={36}
-                            className="h-8 md:h-9 w-auto object-contain"
-                            priority
-                        />
-                    </Link>
-
-                    {/* Desktop Navigation */}
-                    <nav className="hidden lg:flex items-center gap-1 mx-8">
-                        {[
-                            { label: 'Home', href: '/' },
-                            { label: 'Products', href: '/products' },
-                            { label: 'Cases', href: '/category/phone-cases' },
-                            { label: 'Watches', href: '/category/watches' },
-                            { label: 'Mobiles', href: '/category/mobiles' },
-                        ].map((item) => (
-                            <Link
-                                key={item.label}
-                                href={item.href}
-                                className="px-4 py-2 text-[12px] font-bold uppercase tracking-wider text-zinc-500 hover:text-black transition-colors relative group"
+        <>
+            <header className={cn(
+                "w-full transition-all duration-300 lg:sticky lg:top-0 z-50 border-b",
+                headerBg
+            )}>
+                <div className="container mx-auto px-4 py-3">
+                    <div className="flex items-center justify-between gap-4">
+                        {/* Left: Mobile "All Categories" */}
+                        <div className="flex items-center gap-1 lg:hidden">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className={cn(iconColor)}
+                                onClick={() => setIsCategoryOpen(true)}
                             >
-                                {item.label}
+                                <LayoutGrid className="h-5 w-5" />
+                            </Button>
+                        </div>
+
+                        {/* Logo */}
+                        <Link href="/" className="flex items-center group relative lg:mr-auto pl-2 md:pl-0">
+                            <Image
+                                src="/images/teklito-logo.webp"
+                                alt="TEKLITO Logo"
+                                width={110}
+                                height={36}
+                                className={cn("h-8 md:h-9 w-auto object-contain transition-all duration-300", logoBrightness)}
+                                priority
+                            />
+                        </Link>
+
+                        {/* Desktop Navigation */}
+                        <nav className="hidden lg:flex items-center gap-1 mx-8 uppercase">
+                            <Link href="/" className={cn("px-4 py-2 text-[12px] font-bold tracking-wider transition-colors relative group", isScrolled ? "text-zinc-300 hover:text-primary" : "text-zinc-500 hover:text-black")}>
+                                Home
                                 <span className="absolute bottom-0 left-0 w-full h-[2px] bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
                             </Link>
-                        ))}
-                    </nav>
+                            <Link href="/products" className={cn("px-4 py-2 text-[12px] font-bold tracking-wider transition-colors relative group", isScrolled ? "text-zinc-300 hover:text-primary" : "text-zinc-500 hover:text-black")}>
+                                Products
+                                <span className="absolute bottom-0 left-0 w-full h-[2px] bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+                            </Link>
+                            {mainCategories.map((cat) => (
+                                <Link
+                                    key={cat.id}
+                                    href={`/category/${cat.slug}`}
+                                    className={cn("px-4 py-2 text-[12px] font-bold tracking-wider transition-colors relative group", isScrolled ? "text-zinc-300 hover:text-primary" : "text-zinc-500 hover:text-black")}
+                                >
+                                    {cat.name}
+                                    <span className="absolute bottom-0 left-0 w-full h-[2px] bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+                                </Link>
+                            ))}
+                        </nav>
 
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-1 lg:gap-2">
-                        {/* Mobile Search Trigger (Right Side) */}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="lg:hidden text-zinc-800"
-                            onClick={() => setIsSearchOpen(true)}
-                        >
-                            <Search className="h-5 w-5" />
-                        </Button>
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-1 lg:gap-2">
+                            {/* Mobile Search Trigger */}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className={cn("lg:hidden", iconColor)}
+                                onClick={() => setIsSearchOpen(true)}
+                            >
+                                <Search className="h-5 w-5" />
+                            </Button>
 
-                        {/* Desktop Search */}
-                        <div className="hidden md:block relative mr-2">
-                            <form onSubmit={handleSearch} className="flex">
-                                <Input
-                                    type="search"
-                                    placeholder="Search products..."
-                                    className="h-10 w-48 lg:w-64 bg-zinc-50 border-zinc-100 text-[12px] rounded-xl pl-4 pr-10 focus-visible:ring-primary/20"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                                <Button size="icon" variant="ghost" className="absolute right-0 h-10 w-10 text-zinc-400">
-                                    <Search className="h-4 w-4" />
+                            {/* Desktop Search Trigger (Now uses Dialog as requested) */}
+                            <div className="hidden md:block relative mr-2">
+                                <Button
+                                    variant="ghost"
+                                    className={cn("w-64 justify-start text-left font-normal h-10 px-4 rounded-xl border transition-all hover:bg-transparent", inputBg)}
+                                    onClick={() => setIsSearchOpen(true)}
+                                >
+                                    <Search className={cn("mr-2 h-4 w-4", isScrolled ? "text-primary" : "text-zinc-400")} />
+                                    <span className={isScrolled ? "text-zinc-400" : "text-zinc-500"}>Search products...</span>
                                 </Button>
-                            </form>
+                            </div>
+
+                            {/* Wishlist */}
+                            <Button variant="ghost" size="icon" className={cn("hidden lg:flex relative h-10 w-10 hover:bg-transparent", iconColor)} asChild>
+                                <Link href="/wishlist">
+                                    <Heart className="h-5 w-5" />
+                                    {wishlistCount > 0 && (
+                                        <span className="absolute top-1 right-1 flex h-4 w-4">
+                                            <span className="relative inline-flex rounded-full h-4 w-4 bg-primary text-[8px] items-center justify-center text-black font-black">
+                                                {wishlistCount}
+                                            </span>
+                                        </span>
+                                    )}
+                                </Link>
+                            </Button>
+
+                            {/* Cart */}
+                            <Button variant="ghost" size="icon" className={cn("hidden lg:flex relative h-10 w-10 hover:bg-transparent", iconColor)} asChild>
+                                <Link href="/cart">
+                                    <ShoppingCart className="h-5 w-5" />
+                                    {cartCount > 0 && (
+                                        <span className="absolute top-1 right-1 flex h-4 w-4">
+                                            <span className="relative inline-flex rounded-full h-4 w-4 bg-primary text-[8px] items-center justify-center text-black font-black">
+                                                {cartCount}
+                                            </span>
+                                        </span>
+                                    )}
+                                </Link>
+                            </Button>
+
+                            {/* User Profile / Dropdown */}
+                            <div className={cn("flex items-center", isScrolled ? "text-primary" : "")}>
+                                <UserDropdown user={user} profile={profile} />
+                            </div>
                         </div>
-
-                        {/* Wishlist */}
-                        <Button variant="ghost" size="icon" className="hidden lg:flex relative text-zinc-800 h-10 w-10" asChild>
-                            <Link href="/wishlist">
-                                <Heart className="h-5 w-5" />
-                                {wishlistCount > 0 && (
-                                    <span className="absolute top-1 right-1 flex h-4 w-4">
-                                        <span className="relative inline-flex rounded-full h-4 w-4 bg-primary text-[8px] items-center justify-center text-black font-black">
-                                            {wishlistCount}
-                                        </span>
-                                    </span>
-                                )}
-                            </Link>
-                        </Button>
-
-                        {/* Cart */}
-                        <Button variant="ghost" size="icon" className="hidden lg:flex relative text-zinc-800 h-10 w-10" asChild>
-                            <Link href="/cart">
-                                <ShoppingCart className="h-5 w-5" />
-                                {cartCount > 0 && (
-                                    <span className="absolute top-1 right-1 flex h-4 w-4">
-                                        <span className="relative inline-flex rounded-full h-4 w-4 bg-primary text-[8px] items-center justify-center text-black font-black">
-                                            {cartCount}
-                                        </span>
-                                    </span>
-                                )}
-                            </Link>
-                        </Button>
-
-                        <Button variant="ghost" size="icon" className="hidden lg:flex h-10 w-10 p-0 overflow-hidden rounded-full border border-zinc-100 hover:border-black transition-all" asChild>
-                            <Link href="/profile">
-                                <Image
-                                    src="/images/user-avatar/1.svg"
-                                    alt="User Avatar"
-                                    width={40}
-                                    height={40}
-                                    className="h-full w-full object-cover"
-                                />
-                            </Link>
-                        </Button>
                     </div>
                 </div>
-            </div>
 
-            <MobileSearchOverlay
-                isOpen={isSearchOpen}
-                onClose={() => setIsSearchOpen(false)}
-            />
+                {/* Modals */}
+                <SearchDialog
+                    open={isSearchOpen}
+                    onOpenChange={setIsSearchOpen}
+                    categories={categories}
+                />
 
-            <CategorySidebar
-                isOpen={isCategoryOpen}
-                onClose={() => setIsCategoryOpen(false)}
-            />
-        </header>
+                <CategorySidebar
+                    isOpen={isCategoryOpen}
+                    onClose={() => setIsCategoryOpen(false)}
+                    categories={categories}
+                />
+            </header>
+        </>
     );
 }
