@@ -1,13 +1,12 @@
-
 import { createClient } from '@supabase/supabase-js';
-import * as dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+import { loadEnvConfig } from '@next/env';
+
+// Load environment variables from the project root
+loadEnvConfig(process.cwd());
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!; // Use service role if available, but anon might work if RLS allows or if I use service key
-// Actually, I need service role to bypass RLS if there are policies.
-// Checking .env.local for service role. 
-// If not found, I'll try anon.
+// Use Service Role Key for seeding to bypass RLS. Fallback to Anon Key if not set.
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
