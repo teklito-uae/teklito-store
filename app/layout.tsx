@@ -7,6 +7,7 @@ import MobileNav from '@/components/layout/MobileNav';
 import AnnouncementBar from '@/components/layout/AnnouncementBar';
 import { Toaster } from '@/components/ui/sonner';
 import { getCategories } from '@/lib/actions/categories';
+import ScrollToTop from '@/components/shared/ScrollToTop';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -36,6 +37,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${poppins.className} bg-white text-black relative font-sans`}>
+        <ScrollToTop />
         <div className="flex flex-col min-h-screen relative z-10">
           <AnnouncementBar categories={categories} />
           <Header categories={categories} />

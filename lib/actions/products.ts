@@ -110,3 +110,32 @@ export async function getProductsByCategory(categorySlug: string) {
         inStock: product.in_stock,
     })) as Product[];
 }
+
+export async function searchProducts(query: string) {
+    if (!query || query.length < 2) return [];
+
+    const { data, error } = await supabase
+        .from('products')
+        .select(`
+            id,
+            name,
+            slug,
+            price,
+            images,
+            category:categories(name, slug)
+        `)
+        .ilike('name', `%${query}%`)
+        .limit(6);
+
+    if (error) {
+        console.error('Error searching products:', error);
+        return [];
+    }
+
+    return (data || []).map((product: any) => ({
+        ...product,
+        category: Array.isArray(product.category) ? product.category[0]?.name : product.category?.name,
+        categorySlug: Array.isArray(product.category) ? product.category[0]?.slug : product.category?.slug,
+        inStock: true,
+    })) as Product[];
+}

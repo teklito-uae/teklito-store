@@ -13,6 +13,9 @@ export default function ProductImage({ src, alt, className, fill, width, height,
     const [error, setError] = useState(false);
     const [imgSrc, setImgSrc] = useState<string | null>(src || null);
 
+    // If neither fill nor width is provided, we default to fill=true to avoid next/image errors
+    const isFill = fill === undefined && width === undefined ? true : fill;
+
     useEffect(() => {
         setImgSrc(src || null);
         setError(false);
@@ -23,7 +26,7 @@ export default function ProductImage({ src, alt, className, fill, width, height,
         return (
             <div
                 className={`relative bg-zinc-50 flex items-center justify-center overflow-hidden ${className}`}
-                style={{ width: fill ? '100%' : width, height: fill ? '100%' : height }}
+                style={{ width: isFill ? '100%' : width, height: isFill ? '100%' : height }}
                 {...props}
             >
                 {/* Background Watermark Logo */}
@@ -50,9 +53,9 @@ export default function ProductImage({ src, alt, className, fill, width, height,
             src={imgSrc}
             alt={alt}
             className={className}
-            fill={fill}
-            width={width}
-            height={height}
+            fill={isFill}
+            width={isFill ? undefined : (width || 300)}
+            height={isFill ? undefined : (height || 300)}
             onError={() => setError(true)}
             {...props}
         />

@@ -232,11 +232,12 @@ export default function ProfilePage() {
                                         <div className="mt-8 pt-6 border-t border-zinc-50 flex items-center justify-between">
                                             <div className="flex -space-x-3 overflow-hidden">
                                                 {order.order_items?.slice(0, 3).map((item, i) => (
-                                                    <div key={i} className="h-10 w-10 rounded-full border-2 border-white bg-zinc-50 overflow-hidden shadow-sm">
+                                                    <div key={i} className="relative h-10 w-10 rounded-full border-2 border-white bg-zinc-50 overflow-hidden shadow-sm">
                                                         <ProductImage
                                                             src={getImageUrl(item.products.images)}
                                                             alt={item.products.name}
                                                             className="h-full w-full object-cover"
+                                                            fill
                                                         />
                                                     </div>
                                                 ))}
@@ -282,11 +283,12 @@ export default function ProfilePage() {
                                                             <div className="space-y-4">
                                                                 {order.order_items?.map((item, idx) => (
                                                                     <div key={idx} className="flex gap-4 items-center bg-zinc-50 p-4 rounded-3xl border border-zinc-100/50">
-                                                                        <div className="h-16 w-16 rounded-2xl bg-white border border-zinc-100 flex-shrink-0 overflow-hidden p-1 flex items-center justify-center">
+                                                                        <div className="relative h-16 w-16 rounded-2xl bg-white border border-zinc-100 flex-shrink-0 overflow-hidden p-1 flex items-center justify-center">
                                                                             <ProductImage
                                                                                 src={getImageUrl(item.products.images)}
                                                                                 alt={item.products.name}
                                                                                 className="h-full w-full object-contain"
+                                                                                fill
                                                                             />
                                                                         </div>
                                                                         <div className="flex-1 flex flex-col min-w-0">
