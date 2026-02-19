@@ -54,19 +54,19 @@ export default function ProductCard({ product }: ProductCardProps) {
     const displayDiscount = product.discount || (product.originalPrice ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) : null);
 
     return (
-        <Card className="group overflow-hidden bg-white border border-zinc-100 shadow-none hover:shadow-md transition-all duration-300 rounded-[1.25rem] flex flex-col h-full relative">
+        <Card className="group overflow-hidden bg-white border border-zinc-100 shadow-none transition-all duration-300 rounded-[5px] flex flex-col h-full relative">
             <Link href={`/products/${product.slug}`} className="flex flex-col h-full">
                 {/* Image Section */}
                 <div className="relative aspect-[4/5] overflow-hidden p-2">
                     {/* Best Seller / Badge Area */}
                     <div className="absolute top-2 left-2 z-20 flex flex-col gap-1">
                         {product.rating >= 4.7 && (
-                            <div className="bg-[#005a5a] text-white text-[9px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter">
+                            <div className="bg-[#005a5a] text-white text-[9px] font-black px-2 py-0.5 rounded-[5px] uppercase tracking-tighter">
                                 Best Seller
                             </div>
                         )}
                         {product.inStock && product.stock < 10 && (
-                            <div className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-sm uppercase tracking-tighter">
+                            <div className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-[5px] uppercase tracking-tighter">
                                 Only {product.stock} Left
                             </div>
                         )}
@@ -77,11 +77,11 @@ export default function ProductCard({ product }: ProductCardProps) {
                         className="absolute top-3 right-3 z-30 p-1.5 transition-colors"
                         onClick={handleToggleWishlist}
                     >
-                        <Heart className={cn("h-5 w-5 transition-all", inWishlist ? 'fill-zinc-800 text-zinc-800' : 'text-zinc-300 hover:text-zinc-500')} strokeWidth={1.5} />
+                        <Heart className={cn("h-5 w-5 transition-all text-zinc-300 hover:text-red-500", inWishlist ? 'fill-red-500 text-red-500' : '')} strokeWidth={1.5} />
                     </button>
 
                     {/* Product Image */}
-                    <div className="relative w-full h-full rounded-xl overflow-hidden">
+                    <div className="relative w-full h-full rounded-[5px] overflow-hidden">
                         <ProductImage
                             src={getImageUrl(product.images, currentImageIndex)}
                             alt={product.name}
@@ -107,7 +107,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                     {/* Add Button Overlay */}
                     <button
                         onClick={handleAddToCart}
-                        className="absolute bottom-3 right-3 z-30 h-8 w-8 bg-white border border-zinc-100 shadow-sm rounded-lg flex items-center justify-center text-zinc-800 hover:bg-zinc-50 transition-colors"
+                        className="absolute bottom-3 right-3 z-30 h-8 w-8 bg-white border border-zinc-100 shadow-sm rounded-[5px] flex items-center justify-center text-zinc-800 hover:bg-zinc-50 transition-colors"
                     >
                         <Plus className="h-5 w-5" />
                     </button>
@@ -116,14 +116,14 @@ export default function ProductCard({ product }: ProductCardProps) {
                 {/* Info Section */}
                 <CardContent className="p-3 pt-0 flex flex-col flex-1 gap-1.5">
                     {/* Product Name */}
-                    <h3 className="text-sm font-medium text-zinc-800 line-clamp-2 leading-tight min-h-[2.5rem]">
+                    <h3 className="text-xs font-medium uppercase text-zinc-800 line-clamp-2 leading-tight min-h-[2rem]">
                         {product.name}
                     </h3>
 
                     {/* Rating Pill */}
                     <div className="flex items-center gap-1">
-                        <div className="flex items-center gap-0.5 bg-zinc-50 px-1.5 py-0.5 rounded text-[10px] font-bold text-zinc-600 border border-zinc-100">
-                            <Star className="h-3 w-3 fill-green-500 text-green-500" />
+                        <div className="flex items-center gap-0.5 bg-zinc-50 px-1.5 py-0.5 rounded-[5px] text-[10px] font-bold text-zinc-600 border border-zinc-100">
+                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                             {product.rating}
                             <span className="text-zinc-300 font-normal ml-0.5">({product.reviewCount || 0})</span>
                         </div>
@@ -132,17 +132,17 @@ export default function ProductCard({ product }: ProductCardProps) {
                     {/* Price & Discount */}
                     <div className="mt-auto space-y-0.5">
                         <div className="flex items-baseline gap-1.5 leading-none">
-                            <span className="text-[10px] font-bold text-black">AED</span>
+                            <span className="text-[10px] font-black text-black">AED</span>
                             <span className="text-lg font-black text-black">
                                 {product.price.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                             </span>
                             {product.originalPrice && (
-                                <span className="text-[10px] text-zinc-400 line-through">
+                                <span className="text-[10px] text-zinc-300 line-through font-bold">
                                     {product.originalPrice.toFixed(0)}
                                 </span>
                             )}
                             {displayDiscount && (
-                                <span className="text-[10px] font-bold text-green-600">
+                                <span className="text-[12px] font-black text-emerald-600 ml-auto">
                                     {displayDiscount}% OFF
                                 </span>
                             )}
@@ -152,7 +152,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                     {/* Trust Labels / Badges at bottom */}
                     <div className="flex flex-col gap-1 mt-1">
                         {/* Attributes/Specs short text */}
-                        <p className="text-[10px] text-zinc-400 font-medium">
+                        <p className="text-[10px] text-zinc-400 font-medium font-poppins uppercase tracking-wider">
                             {product.categorySlug === 'phone-cases' ? 'Premium Grade' :
                                 product.categorySlug === 'watches' ? 'Original Protocol' : 'Verified Device'}
                         </p>

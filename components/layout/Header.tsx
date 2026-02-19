@@ -52,7 +52,7 @@ export default function Header({ categories }: HeaderProps) {
         };
     }, []);
 
-    const headerBg = isScrolled ? 'bg-black/95 backdrop-blur-md border-zinc-900 shadow-md' : 'bg-white border-zinc-100';
+    const headerBg = isScrolled ? 'bg-black/95 backdrop-blur-md border-zinc-900' : 'bg-white border-zinc-100';
     const iconColor = isScrolled ? 'text-primary' : 'text-zinc-800';
     const inputBg = isScrolled ? 'bg-zinc-900 border-primary/30 text-white placeholder:text-zinc-500' : 'bg-zinc-50 border-zinc-100 text-black';
     const logoBrightness = isScrolled ? 'brightness-0 invert' : '';
@@ -121,7 +121,7 @@ export default function Header({ categories }: HeaderProps) {
                             <div className="hidden md:block relative mr-2">
                                 <Button
                                     variant="ghost"
-                                    className={cn("w-64 justify-start text-left font-normal h-10 px-4 rounded-xl border transition-all hover:bg-transparent", inputBg)}
+                                    className={cn("w-64 justify-start text-left font-normal h-10 px-4 rounded-[5px] border transition-all hover:bg-transparent", inputBg)}
                                     onClick={() => setIsSearchOpen(true)}
                                 >
                                     <Search className={cn("mr-2 h-4 w-4", isScrolled ? "text-primary" : "text-zinc-400")} />

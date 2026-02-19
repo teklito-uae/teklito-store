@@ -52,7 +52,7 @@ export default function CategorySidebar({ isOpen, onClose, categories }: Categor
                                 className="flex items-center justify-between px-6 py-4 hover:bg-zinc-50 transition-colors group"
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className="h-10 w-10 rounded-xl bg-zinc-50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                                    <div className="h-10 w-10 rounded-[5px] bg-zinc-50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                                         <Icon className="h-5 w-5 text-zinc-600 group-hover:text-primary transition-colors" />
                                     </div>
                                     <span className="text-sm font-semibold text-zinc-800">{category.name}</span>

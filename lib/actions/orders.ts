@@ -78,3 +78,58 @@ export async function createOrder(params: CreateOrderParams) {
         };
     }
 }
+
+export async function getOrderById(id: string) {
+    try {
+        const response = await WooCommerce.get(`orders/${id}`);
+        const order = response.data;
+
+        if (!order) return null;
+
+        return mapWooCommerceOrder(order);
+    } catch (error) {
+        console.error(`Error fetching order ${id}:`, error);
+        return null;
+    }
+}
+
+function mapWooCommerceOrder(wpOrder: any) {
+    return {
+        id: String(wpOrder.id),
+        orderNumber: wpOrder.number,
+        date: wpOrder.date_created,
+        status: mapStatus(wpOrder.status),
+        items: wpOrder.line_items.map((item: any) => ({
+            productId: String(item.product_id),
+            productName: item.name,
+            quantity: item.quantity,
+            price: parseFloat(item.price || '0'),
+            total: parseFloat(item.total || '0')
+        })),
+        total: parseFloat(wpOrder.total || '0'),
+        shipping: parseFloat(wpOrder.shipping_total || '0'),
+        subtotal: parseFloat(wpOrder.total || '0') - parseFloat(wpOrder.shipping_total || '0'),
+        shippingAddress: {
+            fullName: `${wpOrder.shipping.first_name} ${wpOrder.shipping.last_name}`,
+            addressLine1: wpOrder.shipping.address_1,
+            city: wpOrder.shipping.city,
+            zipCode: wpOrder.shipping.postcode,
+            country: wpOrder.shipping.country
+        }
+    };
+}
+
+function mapStatus(status: string): string {
+    const statusMap: Record<string, string> = {
+        'pending': 'pending',
+        'processing': 'processing',
+        'on-hold': 'processing',
+        'completed': 'delivered',
+        'cancelled': 'cancelled',
+        'refunded': 'cancelled',
+        'failed': 'cancelled',
+        'shipping': 'shipped', // WC might use different status or custom one
+        'shipped': 'shipped'
+    };
+    return statusMap[status] || 'pending';
+}

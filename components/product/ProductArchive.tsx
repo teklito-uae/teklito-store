@@ -60,7 +60,7 @@ export default function ProductArchive({ initialProducts, categories }: ProductA
                         placeholder="Search products..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 h-11 bg-zinc-50 border-none rounded-xl"
+                        className="pl-10 h-11 bg-zinc-50 border-none rounded-[5px]"
                     />
                 </div>
             </div>
@@ -71,7 +71,7 @@ export default function ProductArchive({ initialProducts, categories }: ProductA
                 <div className="space-y-2">
                     <button
                         onClick={() => setSelectedCategory(null)}
-                        className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all ${!selectedCategory
+                        className={`w-full flex items-center justify-between px-4 py-2.5 rounded-[5px] transition-all ${!selectedCategory
                             ? 'bg-primary text-black font-bold'
                             : 'bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
                             }`}
@@ -83,7 +83,7 @@ export default function ProductArchive({ initialProducts, categories }: ProductA
                         <button
                             key={cat.id}
                             onClick={() => setSelectedCategory(cat.slug)}
-                            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all ${selectedCategory === cat.slug
+                            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-[5px] transition-all ${selectedCategory === cat.slug
                                 ? 'bg-primary text-black font-bold'
                                 : 'bg-zinc-50 text-zinc-600 hover:bg-zinc-100'
                                 }`}
@@ -98,7 +98,7 @@ export default function ProductArchive({ initialProducts, categories }: ProductA
             <div>
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-bold uppercase tracking-widest">Price Range</h3>
-                    <span className="text-xs font-bold text-primary bg-black px-2 py-1 rounded-lg">${priceRange[0]} - ${priceRange[1]}</span>
+                    <span className="text-xs font-bold text-primary bg-black px-2 py-1 rounded-[5px]">AED {priceRange[0]} - {priceRange[1]}</span>
                 </div>
                 <Slider
                     defaultValue={[0, 5000]}
@@ -113,12 +113,12 @@ export default function ProductArchive({ initialProducts, categories }: ProductA
             {/* Rating */}
             <div>
                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-4">Min Rating</h3>
-                <div className="flex bg-white p-1 rounded-2xl border border-zinc-100 shadow-sm">
+                <div className="flex bg-white p-1 rounded-[5px] border border-zinc-100">
                     {[0, 1, 2, 3, 4, 5].map((rating) => (
                         <button
                             key={rating}
                             onClick={() => setMinRating(rating)}
-                            className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-xl transition-all ${minRating === rating
+                            className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-[5px] transition-all ${minRating === rating
                                 ? 'bg-black text-primary'
                                 : 'bg-transparent text-zinc-400 hover:text-black'
                                 }`}
@@ -150,7 +150,7 @@ export default function ProductArchive({ initialProducts, categories }: ProductA
             <div className="container mx-auto px-4 py-12">
                 <div className="flex flex-col md:flex-row gap-12">
                     {/* Desktop Sidebar */}
-                    <aside className="hidden md:block w-72 shrink-0 sticky top-32 h-fit bg-white p-8 rounded-3xl shadow-sm border border-zinc-100/50">
+                    <aside className="hidden md:block w-72 shrink-0 sticky top-32 h-fit bg-white p-8 rounded-[5px] border border-zinc-100/50">
                         <FilterContent />
                     </aside>
 
@@ -162,7 +162,7 @@ export default function ProductArchive({ initialProducts, categories }: ProductA
                             {/* Mobile Filters Trigger */}
                             <Sheet>
                                 <SheetTrigger asChild>
-                                    <Button variant="outline" className="md:hidden h-12 rounded-2xl border-zinc-200 px-6 gap-2">
+                                    <Button variant="outline" className="md:hidden h-12 rounded-[5px] border-zinc-200 px-6 gap-2">
                                         <SlidersHorizontal className="h-4 w-4" />
                                         Filters
                                     </Button>
@@ -176,7 +176,7 @@ export default function ProductArchive({ initialProducts, categories }: ProductA
                                     </div>
                                     <div className="p-8 border-t border-zinc-100">
                                         <Button
-                                            className="w-full h-14 bg-primary text-black font-black uppercase tracking-widest rounded-2xl"
+                                            className="w-full h-14 bg-primary text-black font-black uppercase tracking-widest rounded-[5px]"
                                             onClick={() => document.querySelector<HTMLButtonElement>('[data-slot="sheet-close"]')?.click()}
                                         >
                                             Show {filteredProducts.length} Results

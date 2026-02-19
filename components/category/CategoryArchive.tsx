@@ -56,8 +56,8 @@ export default function CategoryArchive({ category, products, metadata }: Catego
                         <div className="flex overflow-x-auto gap-3 pb-2 -mx-4 px-4 scrollbar-hide">
                             <button
                                 onClick={() => setSelectedSub(null)}
-                                className={`flex-none px-6 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 border ${selectedSub === null
-                                    ? 'bg-black text-white border-black shadow-lg shadow-black/10'
+                                className={`flex-none px-6 py-3 rounded-[5px] text-[11px] font-black uppercase tracking-widest transition-all duration-300 border ${selectedSub === null
+                                    ? 'bg-black text-white border-black'
                                     : 'bg-white text-zinc-500 border-zinc-100 hover:border-black'
                                     }`}
                             >
@@ -67,9 +67,9 @@ export default function CategoryArchive({ category, products, metadata }: Catego
                                 <button
                                     key={idx}
                                     onClick={() => setSelectedSub(sub.name)}
-                                    className={`flex-none px-8 py-3 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 border ${selectedSub === sub.name
-                                        ? 'bg-primary text-black border-primary shadow-lg shadow-primary/20'
-                                        : 'bg-white text-black border-zinc-100 hover:border-black hover:shadow-md'
+                                    className={`flex-none px-8 py-3 rounded-[5px] text-[11px] font-black uppercase tracking-widest transition-all duration-300 border ${selectedSub === sub.name
+                                        ? 'bg-primary text-black border-primary'
+                                        : 'bg-white text-black border-zinc-100 hover:border-black'
                                         }`}
                                 >
                                     {sub.name}
@@ -92,9 +92,9 @@ export default function CategoryArchive({ category, products, metadata }: Catego
                                 return (
                                     <div
                                         key={idx}
-                                        className="flex-none w-28 h-28 bg-zinc-50 border border-zinc-100 rounded-3xl flex flex-col items-center justify-center gap-3 group hover:border-black hover:bg-white transition-all cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-1"
+                                        className="flex-none w-28 h-28 bg-zinc-50 border border-zinc-100 rounded-[5px] flex flex-col items-center justify-center gap-3 group hover:border-black hover:bg-white transition-all cursor-pointer"
                                     >
-                                        <div className="p-3 bg-white rounded-2xl group-hover:bg-primary transition-colors">
+                                        <div className="p-3 bg-white rounded-[5px] group-hover:bg-primary transition-colors">
                                             <Icon className="h-6 w-6 text-black" />
                                         </div>
                                         <span className="text-[9px] font-black uppercase tracking-tighter text-zinc-400 group-hover:text-black transition-colors">

@@ -98,7 +98,7 @@ export default function SearchDialog({ open, onOpenChange, categories }: SearchD
                         )} />
                         <CommandPrimitive.Input
                             placeholder="Type to search..."
-                            className="w-full h-11 md:h-14 bg-zinc-50 rounded-xl md:rounded-2xl text-sm md:text-lg text-black font-bold placeholder:text-zinc-400 border-none focus:ring-2 focus:ring-primary/20 pl-11 md:pl-12 pr-11 md:pr-12 transition-all outline-none"
+                            className="w-full h-11 md:h-14 bg-zinc-50 rounded-[5px] text-sm md:text-lg text-black font-bold placeholder:text-zinc-400 border-none focus:ring-2 focus:ring-primary/20 pl-11 md:pl-12 pr-11 md:pr-12 transition-all outline-none"
                             value={query}
                             onValueChange={setQuery}
                             onKeyDown={(e) => {
@@ -136,7 +136,7 @@ export default function SearchDialog({ open, onOpenChange, categories }: SearchD
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="mt-2 h-8 rounded-full px-5 border-zinc-200 text-[9px] font-bold uppercase tracking-widest"
+                                    className="mt-2 h-8 rounded-[5px] px-5 border-zinc-200 text-[9px] font-bold uppercase tracking-widest"
                                     onClick={() => setQuery('')}
                                 >
                                     Reset
@@ -162,10 +162,10 @@ export default function SearchDialog({ open, onOpenChange, categories }: SearchD
                                         value={product.id}
                                         onSelect={() => handleSelectProduct(product.slug)}
                                         onClick={() => handleSelectProduct(product.slug)}
-                                        className="flex items-center gap-3 md:gap-4 p-2 md:p-3 rounded-lg md:rounded-2xl bg-zinc-50/30 hover:bg-zinc-100 transition-all cursor-pointer group border border-transparent hover:border-zinc-200 !opacity-100 !pointer-events-auto"
+                                        className="flex items-center gap-3 md:gap-4 p-2 md:p-3 rounded-[5px] bg-zinc-50/30 hover:bg-zinc-100 transition-all cursor-pointer group border border-transparent hover:border-zinc-200 !opacity-100 !pointer-events-auto"
                                     >
                                         <div className="flex items-center gap-3 md:gap-4 w-full">
-                                            <div className="relative h-12 w-12 md:h-16 md:w-16 rounded-md md:rounded-xl bg-white border border-zinc-100 p-1 overflow-hidden shrink-0">
+                                            <div className="relative h-12 w-12 md:h-16 md:w-16 rounded-[5px] bg-white border border-zinc-100 p-1 overflow-hidden shrink-0">
                                                 <ProductImage
                                                     src={getImageUrl(product.images)}
                                                     alt={product.name}
@@ -182,7 +182,7 @@ export default function SearchDialog({ open, onOpenChange, categories }: SearchD
                                                 </p>
                                             </div>
                                             <div className="text-right shrink-0 pr-1 md:pr-2">
-                                                <p className="font-black text-black text-xs md:text-sm tracking-tight">${product.price.toFixed(2)}</p>
+                                                <p className="font-black text-black text-xs md:text-sm tracking-tight text-right">AED {product.price.toFixed(2)}</p>
                                             </div>
                                         </div>
                                     </CommandItem>
@@ -190,7 +190,7 @@ export default function SearchDialog({ open, onOpenChange, categories }: SearchD
 
                                 <button
                                     onClick={() => handleSearchSubmit(query)}
-                                    className="w-full mt-2 py-3.5 md:py-5 rounded-xl md:rounded-3xl bg-black text-white font-black uppercase tracking-widest text-[9px] md:text-[10px] flex items-center justify-center gap-2 md:gap-3 hover:bg-primary hover:text-black transition-all"
+                                    className="w-full mt-2 py-3.5 md:py-5 rounded-[5px] bg-black text-white font-black uppercase tracking-widest text-[9px] md:text-[10px] flex items-center justify-center gap-2 md:gap-3 hover:bg-primary hover:text-black transition-all"
                                 >
                                     Full results for "{query}"
                                     <ArrowRight className="h-3 w-3 md:h-4 md:w-4" />
@@ -210,7 +210,7 @@ export default function SearchDialog({ open, onOpenChange, categories }: SearchD
                                         <button
                                             key={item}
                                             onClick={() => setQuery(item)}
-                                            className="px-3 md:px-5 py-1.5 md:py-2.5 rounded-full bg-zinc-50 text-zinc-600 text-[10px] md:text-[11px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all border border-zinc-100"
+                                            className="px-3 md:px-5 py-1.5 md:py-2.5 rounded-[5px] bg-zinc-50 text-zinc-600 text-[10px] md:text-[11px] font-bold uppercase tracking-wider hover:bg-black hover:text-white transition-all border border-zinc-100"
                                         >
                                             {item}
                                         </button>
@@ -226,7 +226,7 @@ export default function SearchDialog({ open, onOpenChange, categories }: SearchD
                                         <button
                                             key={category.id}
                                             onClick={() => handleSelectCategory(category.slug)}
-                                            className="flex flex-col items-center justify-center py-3 md:py-5 px-2 rounded-xl md:rounded-[2rem] bg-zinc-50 border border-zinc-100 hover:border-primary/50 hover:bg-white transition-all group"
+                                            className="flex flex-col items-center justify-center py-3 md:py-5 px-2 rounded-[5px] bg-zinc-50 border border-zinc-100 hover:border-primary/50 hover:bg-white transition-all group"
                                         >
                                             <span className="text-[9px] md:text-[11px] font-black text-black uppercase tracking-widest group-hover:text-primary transition-colors text-center">
                                                 {category.name}

@@ -18,7 +18,7 @@ export default function AnnouncementBar({ categories }: AnnouncementBarProps) {
                         {cat.name}
                     </span>
                 ))}
-                <span className="mx-8">⚡ Free Shipping on Orders Over $100</span>
+                <span className="mx-8">⚡ Free Shipping on Orders Over AED 200</span>
                 <span className="mx-8 text-white/80">Premium Tech Accessories</span>
             </Marquee>
         </div>

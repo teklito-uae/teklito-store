@@ -16,17 +16,19 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { getCartItemsWithProducts, getCartTotal, clearCart } from '@/lib/store/cart';
+import { getCartItemsWithProducts, getCartSubtotal, getCartShippingFee, clearCart } from '@/lib/store/cart';
 import { CartItemWithProduct } from '@/lib/types';
 import { toast } from 'sonner';
 import ProductImage from '@/components/product/ProductImage';
 import { createOrder } from '@/lib/actions/orders';
 import OrderSuccess from '@/components/checkout/OrderSuccess';
+import { cn } from '@/lib/utils';
 
 export default function CheckoutPage() {
     const router = useRouter();
     const [cartItems, setCartItems] = useState<CartItemWithProduct[]>([]);
-    const [total, setTotal] = useState(0);
+    const [subtotal, setSubtotal] = useState(0);
+    const [shippingCost, setShippingCost] = useState(0);
     const [paymentMethod, setPaymentMethod] = useState('cod');
     const [isProcessing, setIsProcessing] = useState(false);
     const [currentStep, setCurrentStep] = useState(1); // 1: Shipping, 2: Payment, 3: Review
@@ -50,15 +52,18 @@ export default function CheckoutPage() {
     useEffect(() => {
         const loadData = async () => {
             const items = await getCartItemsWithProducts();
-            const cartTotal = await getCartTotal();
 
             if (items.length === 0) {
                 router.push('/cart');
                 return;
             }
 
+            const currentSubtotal = await getCartSubtotal();
+            const currentShipping = await getCartShippingFee(currentSubtotal);
+
+            setSubtotal(currentSubtotal);
+            setShippingCost(currentShipping);
             setCartItems(items);
-            setTotal(cartTotal);
             setIsSessionLoading(false);
         };
 
@@ -122,8 +127,7 @@ export default function CheckoutPage() {
         }
     };
 
-    const shippingCost = total >= 50 ? 0 : 5;
-    const finalTotal = total + shippingCost;
+    const total = subtotal + shippingCost;
 
     if (isSuccess) {
         return (
@@ -132,7 +136,7 @@ export default function CheckoutPage() {
                 orderNumber={finalOrderNumber}
                 items={cartItems}
                 shippingInfo={shippingInfo}
-                total={total}
+                total={subtotal}
                 shippingCost={shippingCost}
             />
         );
@@ -146,7 +150,7 @@ export default function CheckoutPage() {
                     transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                     className="flex flex-col items-center gap-4"
                 >
-                    <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center border border-primary/20">
+                    <div className="w-16 h-16 bg-black rounded-[5px] flex items-center justify-center border border-primary/20">
                         <ShieldCheck className="w-8 h-8 text-primary" />
                     </div>
                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">Verifying Identity</p>
@@ -156,7 +160,7 @@ export default function CheckoutPage() {
     }
 
     return (
-        <div className="bg-zinc-50/30 min-h-screen pb-20 font-sans relative">
+        <div className="bg-[#FAFAFA] min-h-screen pb-20 font-poppins relative">
             <AnimatePresence>
                 {isProcessing && (
                     <motion.div
@@ -233,7 +237,7 @@ export default function CheckoutPage() {
                 <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
                     <div className="flex-1">
                         <div className="mb-6">
-                            <h1 className="text-2xl font-bold text-black tracking-tight mb-2">
+                            <h1 className="text-xl md:text-2xl font-black uppercase tracking-tight text-black mb-2">
                                 {currentStep === 1 && 'Shipping Details'}
                                 {currentStep === 2 && 'Payment Method'}
                                 {currentStep === 3 && 'Review Order'}
@@ -242,80 +246,80 @@ export default function CheckoutPage() {
 
                         {currentStep === 1 && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                                <div className="bg-white p-6 md:p-8 rounded-[5px] border border-zinc-200 shadow-sm">
+                                <div className="bg-white p-6 md:p-8 rounded-[5px] border border-zinc-100">
                                     <div className="grid md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <Label htmlFor="fullName" className="text-xs font-bold text-zinc-700">Full Name</Label>
+                                            <Label htmlFor="fullName" className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Full Name</Label>
                                             <Input
                                                 id="fullName"
                                                 name="fullName"
                                                 value={shippingInfo.fullName}
                                                 onChange={handleInputChange}
-                                                className="h-10 rounded-[5px] border-zinc-200 focus:ring-black focus:border-black text-sm"
+                                                className="h-12 rounded-[5px] border-zinc-100 focus:ring-black focus:border-black text-sm font-medium"
                                                 placeholder="John Doe"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="email" className="text-xs font-bold text-zinc-700">Email Address</Label>
+                                            <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Email Address</Label>
                                             <Input
                                                 id="email"
                                                 name="email"
                                                 type="email"
                                                 value={shippingInfo.email}
                                                 onChange={handleInputChange}
-                                                className="h-10 rounded-[5px] border-zinc-200 focus:ring-black focus:border-black text-sm"
+                                                className="h-12 rounded-[5px] border-zinc-100 focus:ring-black focus:border-black text-sm font-medium"
                                                 placeholder="john@example.com"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="phone" className="text-xs font-bold text-zinc-700">Phone Number</Label>
+                                            <Label htmlFor="phone" className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Phone Number</Label>
                                             <Input
                                                 id="phone"
                                                 name="phone"
                                                 type="tel"
                                                 value={shippingInfo.phone}
                                                 onChange={handleInputChange}
-                                                className="h-10 rounded-[5px] border-zinc-200 focus:ring-black focus:border-black text-sm"
+                                                className="h-12 rounded-[5px] border-zinc-100 focus:ring-black focus:border-black text-sm font-medium"
                                                 placeholder="+971 50 000 0000"
                                             />
                                         </div>
                                         <div className="space-y-2 col-span-2">
-                                            <Label htmlFor="address" className="text-xs font-bold text-zinc-700">Delivery Address</Label>
+                                            <Label htmlFor="address" className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Delivery Address</Label>
                                             <Input
                                                 id="address"
                                                 name="address"
                                                 value={shippingInfo.address}
                                                 onChange={handleInputChange}
-                                                className="h-10 rounded-[5px] border-zinc-200 focus:ring-black focus:border-black text-sm"
+                                                className="h-12 rounded-[5px] border-zinc-100 focus:ring-black focus:border-black text-sm font-medium"
                                                 placeholder="Street, Building, Apartment No."
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="city" className="text-xs font-bold text-zinc-700">City</Label>
+                                            <Label htmlFor="city" className="text-[10px] font-black uppercase tracking-widest text-zinc-500">City</Label>
                                             <Input
                                                 id="city"
                                                 name="city"
                                                 value={shippingInfo.city}
                                                 onChange={handleInputChange}
-                                                className="h-10 rounded-[5px] border-zinc-200 focus:ring-black focus:border-black text-sm"
+                                                className="h-12 rounded-[5px] border-zinc-100 focus:ring-black focus:border-black text-sm font-medium"
                                                 placeholder="Dubai"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="zipCode" className="text-xs font-bold text-zinc-700">ZIP / Postcode</Label>
+                                            <Label htmlFor="zipCode" className="text-[10px] font-black uppercase tracking-widest text-zinc-500">ZIP / Postcode</Label>
                                             <Input
                                                 id="zipCode"
                                                 name="zipCode"
                                                 value={shippingInfo.zipCode}
                                                 onChange={handleInputChange}
-                                                className="h-10 rounded-[5px] border-zinc-200 focus:ring-black focus:border-black text-sm"
+                                                className="h-12 rounded-[5px] border-zinc-100 focus:ring-black focus:border-black text-sm font-medium"
                                                 placeholder="00000"
                                             />
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex justify-end">
-                                    <Button onClick={nextStep} className="h-12 w-full md:w-auto px-8 bg-black text-primary hover:bg-zinc-900 hover:scale-[1.02] active:scale-95 transition-all duration-300 rounded-[5px] text-xs font-black uppercase tracking-wider">
+                                <div className="flex justify-end pt-4">
+                                    <Button onClick={nextStep} className="h-14 w-full md:w-auto px-10 bg-black text-white hover:bg-zinc-800 transition-all rounded-[5px] text-[10px] font-black uppercase tracking-[0.2em]">
                                         Continue to Payment
                                     </Button>
                                 </div>
@@ -324,24 +328,24 @@ export default function CheckoutPage() {
 
                         {currentStep === 2 && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                                <div className="bg-white p-6 md:p-8 rounded-[5px] border border-zinc-200 shadow-sm">
+                                <div className="bg-white p-6 md:p-8 rounded-[5px] border border-zinc-100">
                                     <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-4">
-                                        <div className={`relative flex items-center space-x-4 rounded-[5px] border p-4 cursor-pointer transition-all ${paymentMethod === 'cod' ? 'border-primary bg-zinc-50' : 'border-zinc-200 hover:border-zinc-300'}`}>
-                                            <RadioGroupItem value="cod" id="cod" />
+                                        <div className={`relative flex items-center space-x-4 rounded-[5px] border p-5 cursor-pointer transition-all ${paymentMethod === 'cod' ? 'border-zinc-900 bg-zinc-50' : 'border-zinc-100 hover:border-zinc-200'}`}>
+                                            <RadioGroupItem value="cod" id="cod" className="border-zinc-300" />
                                             <Label htmlFor="cod" className="flex-1 cursor-pointer">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-sm font-bold text-black">Cash on Delivery</span>
-                                                    <Package className="h-5 w-5 text-zinc-500" />
+                                                    <span className="text-sm font-bold text-black uppercase tracking-tight">Cash on Delivery</span>
+                                                    <Package className="h-5 w-5 text-zinc-400" />
                                                 </div>
                                             </Label>
                                         </div>
                                     </RadioGroup>
                                 </div>
-                                <div className="flex justify-between">
-                                    <Button variant="outline" onClick={prevStep} className="h-12 px-8 rounded-[5px] border-zinc-200 text-xs font-bold uppercase tracking-wider hover:bg-zinc-50">
+                                <div className="flex flex-col-reverse md:flex-row justify-between gap-4 pt-4">
+                                    <Button variant="outline" onClick={prevStep} className="h-14 px-10 rounded-[5px] border-zinc-100 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-50">
                                         Back
                                     </Button>
-                                    <Button onClick={nextStep} className="h-12 w-full md:w-auto px-8 bg-black text-primary hover:bg-zinc-900 hover:scale-[1.02] active:scale-95 transition-all duration-300 rounded-[5px] text-xs font-black uppercase tracking-wider">
+                                    <Button onClick={nextStep} className="h-14 w-full md:w-auto px-10 bg-black text-white hover:bg-zinc-800 transition-all rounded-[5px] text-[10px] font-black uppercase tracking-[0.2em]">
                                         Review Order
                                     </Button>
                                 </div>
@@ -350,34 +354,58 @@ export default function CheckoutPage() {
 
                         {currentStep === 3 && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                                <div className="bg-white p-6 md:p-8 rounded-[5px] border border-zinc-200 shadow-sm space-y-6">
-                                    <div className="bg-zinc-50 p-4 rounded-[5px]">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h3 className="text-xs font-bold uppercase tracking-wide text-zinc-500">Shipping To</h3>
-                                            <button onClick={() => setCurrentStep(1)} className="text-[10px] font-bold text-blue-600 hover:underline">Edit</button>
-                                        </div>
-                                        <p className="text-sm font-bold text-black">{shippingInfo.fullName}</p>
-                                        <p className="text-sm text-zinc-600">{shippingInfo.address}, {shippingInfo.city}</p>
-                                        <p className="text-sm text-zinc-600">{shippingInfo.phone}</p>
+                                {/* Mobile Items List - First on Mobile */}
+                                <div className="lg:hidden space-y-4">
+                                    <div className="flex items-center justify-between px-1">
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Review Items</h3>
+                                        <span className="text-[10px] font-bold text-zinc-900">{cartItems.length} Products</span>
                                     </div>
-
-                                    <div className="bg-zinc-50 p-4 rounded-[5px]">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h3 className="text-xs font-bold uppercase tracking-wide text-zinc-500">Payment Method</h3>
-                                            <button onClick={() => setCurrentStep(2)} className="text-[10px] font-bold text-blue-600 hover:underline">Edit</button>
-                                        </div>
-                                        <p className="text-sm font-bold text-black">Cash on Delivery</p>
+                                    <div className="space-y-3">
+                                        {cartItems.map((item) => (
+                                            <div key={item.productId} className="flex gap-4 bg-white p-4 rounded-[5px] border border-zinc-100">
+                                                <div className="relative w-16 h-16 bg-zinc-50 rounded-[5px] overflow-hidden border border-zinc-100 shrink-0">
+                                                    <ProductImage src={item.product.images[0]} alt={item.product.name} fill className="object-cover" />
+                                                </div>
+                                                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                                    <p className="text-[11px] font-bold text-zinc-900 line-clamp-2 leading-tight uppercase tracking-tight">{item.product.name}</p>
+                                                    <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest mt-1">Qty: {item.quantity}</p>
+                                                </div>
+                                                <div className="text-[11px] font-black text-black self-center">
+                                                    AED {(item.product.price * item.quantity).toFixed(2)}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
 
-                                <div className="flex justify-between">
-                                    <Button variant="outline" onClick={prevStep} className="h-12 px-8 rounded-[5px] border-zinc-200 text-xs font-bold uppercase tracking-wider hover:bg-zinc-50">
+                                <div className="bg-white p-6 md:p-8 rounded-[5px] border border-zinc-100 space-y-6">
+                                    <div className="bg-zinc-50/50 p-6 rounded-[5px] border border-zinc-100">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Shipping To</h3>
+                                            <button onClick={() => setCurrentStep(1)} className="text-[10px] font-black uppercase tracking-widest text-black hover:underline underline-offset-4 transition-all">Edit</button>
+                                        </div>
+                                        <p className="text-sm font-bold text-black uppercase tracking-tight mb-1">{shippingInfo.fullName}</p>
+                                        <p className="text-xs text-zinc-600 font-medium leading-relaxed">{shippingInfo.address}, {shippingInfo.city}</p>
+                                        <p className="text-xs text-zinc-600 font-medium mt-1">{shippingInfo.phone}</p>
+                                    </div>
+
+                                    <div className="bg-zinc-50/50 p-6 rounded-[5px] border border-zinc-100">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Payment Method</h3>
+                                            <button onClick={() => setCurrentStep(2)} className="text-[10px] font-black uppercase tracking-widest text-black hover:underline underline-offset-4 transition-all">Edit</button>
+                                        </div>
+                                        <p className="text-sm font-bold text-black uppercase tracking-tight">Cash on Delivery</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col md:flex-row justify-between gap-4 pt-4">
+                                    <Button variant="outline" onClick={prevStep} className="h-14 px-10 rounded-[5px] border-zinc-100 text-[10px] font-black uppercase tracking-widest hover:bg-zinc-50">
                                         Back
                                     </Button>
                                     <Button
                                         onClick={handlePlaceOrder}
                                         disabled={isProcessing}
-                                        className="h-12 w-full md:w-auto px-12 bg-black text-primary hover:bg-zinc-900 hover:scale-[1.02] active:scale-95 transition-all duration-300 rounded-[5px] text-xs font-black uppercase tracking-wider shadow-lg shadow-primary/10"
+                                        className="h-14 w-full md:w-auto px-12 bg-black text-white hover:bg-zinc-800 transition-all rounded-[5px] text-[10px] font-black uppercase tracking-[0.2em]"
                                     >
                                         {isProcessing ? 'Processing...' : 'Place Order'}
                                     </Button>
@@ -386,13 +414,16 @@ export default function CheckoutPage() {
                         )}
                     </div>
 
-                    <div className="w-full lg:w-[380px] flex-shrink-0">
-                        <div className="sticky top-24 bg-white p-6 rounded-[5px] border border-zinc-200 shadow-sm">
-                            <h2 className="text-lg font-bold text-black mb-6">Order Summary</h2>
+                    <div className="w-full lg:w-[400px] flex-shrink-0">
+                        <div className="sticky top-24 bg-white p-6 md:p-8 rounded-[5px] border border-zinc-100">
+                            <h2 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-8">Your Order</h2>
 
-                            <div className="space-y-4 max-h-[40vh] overflow-y-auto scrollbar-hide mb-6 pr-1">
+                            <div className={cn(
+                                "space-y-6 max-h-[45vh] overflow-y-auto scrollbar-hide mb-8 pr-1",
+                                currentStep === 3 && "hidden lg:block"
+                            )}>
                                 {cartItems.map((item) => (
-                                    <div key={item.productId} className="flex gap-3">
+                                    <div key={item.productId} className="flex gap-4">
                                         <div className="relative w-16 h-16 bg-zinc-50 rounded-[5px] overflow-hidden border border-zinc-100 flex-shrink-0">
                                             <ProductImage
                                                 src={item.product.images[0]}
@@ -401,32 +432,43 @@ export default function CheckoutPage() {
                                                 className="object-cover"
                                             />
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-bold text-zinc-900 line-clamp-2 leading-tight">{item.product.name}</p>
-                                            <p className="text-[10px] text-zinc-500 mt-1">Qty: {item.quantity}</p>
+                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                            <p className="text-[11px] font-bold text-zinc-900 line-clamp-2 leading-tight uppercase tracking-tight">{item.product.name}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">Qty: {item.quantity}</span>
+                                            </div>
                                         </div>
-                                        <div className="text-xs font-bold text-zinc-900">
-                                            ${(item.product.price * item.quantity).toFixed(2)}
+                                        <div className="text-[11px] font-black text-zinc-900 flex items-center">
+                                            AED {(item.product.price * item.quantity).toFixed(2)}
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="space-y-3 border-t border-zinc-100 pt-4">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-zinc-500">Subtotal</span>
-                                    <span className="font-bold text-black">${total.toFixed(2)}</span>
+                            <div className="space-y-4 border-t border-zinc-100 pt-6 mt-6">
+                                <div className="flex justify-between text-xs font-poppins">
+                                    <span className="text-zinc-500 font-medium">Subtotal</span>
+                                    <span className="font-bold text-black">AED {subtotal.toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-zinc-500">Shipping</span>
-                                    <span className="font-bold text-black">
-                                        {shippingCost === 0 ? 'Free' : `$${shippingCost.toFixed(2)}`}
+                                <div className="flex justify-between text-xs font-poppins">
+                                    <span className="text-zinc-500 font-medium">Shipping</span>
+                                    <span className="font-bold text-black uppercase tracking-widest text-[10px]">
+                                        {shippingCost === 0 ? 'Free' : `AED ${shippingCost.toFixed(2)}`}
                                     </span>
                                 </div>
-                                <div className="flex justify-between items-baseline pt-2 border-t border-zinc-100 mt-2">
-                                    <span className="text-base font-bold text-black">Total</span>
-                                    <span className="text-2xl font-black text-black">${finalTotal.toFixed(2)}</span>
+                                <div className="flex justify-between items-baseline pt-4 border-t border-zinc-100 mt-4">
+                                    <span className="text-xs font-black uppercase tracking-widest text-zinc-900">Total</span>
+                                    <span className="text-2xl font-black text-zinc-900 tracking-tighter">AED {total.toFixed(2)}</span>
                                 </div>
+                            </div>
+
+                            <div className="mt-8 flex items-center gap-3 p-4 bg-zinc-50 rounded-[5px] border border-zinc-100">
+                                <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center border border-zinc-200">
+                                    <Lock className="h-4 w-4 text-emerald-500" />
+                                </div>
+                                <p className="text-[10px] text-zinc-500 font-medium leading-tight">
+                                    Safe and secure. Your payments are processed with military-grade encryption.
+                                </p>
                             </div>
                         </div>
                     </div>

@@ -125,7 +125,7 @@ export async function getCartItemsWithProducts(): Promise<CartItemWithProduct[]>
     return itemsWithProducts.filter((item): item is CartItemWithProduct => item !== null);
 }
 
-export async function getCartTotal(): Promise<number> {
+export async function getCartSubtotal(): Promise<number> {
     const items = await getCartItemsWithProducts();
 
     return items.reduce((total, item) => {
@@ -146,6 +146,20 @@ export async function getCartTotal(): Promise<number> {
 
         return total + price * item.quantity;
     }, 0);
+}
+
+export const SHIPPING_THRESHOLD = 200;
+export const STANDARD_SHIPPING_FEE = 20;
+
+export async function getCartShippingFee(subtotal?: number): Promise<number> {
+    const actualSubtotal = subtotal ?? await getCartSubtotal();
+    return actualSubtotal >= SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_FEE;
+}
+
+export async function getCartTotal(): Promise<number> {
+    const subtotal = await getCartSubtotal();
+    const shipping = await getCartShippingFee(subtotal);
+    return subtotal + shipping;
 }
 
 export function getCartItemCount(): number {
