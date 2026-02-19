@@ -1,21 +1,17 @@
 import WooCommerceRestApi from "@woocommerce/woocommerce-rest-api";
 
-if (!process.env.NEXT_PUBLIC_WC_URL) {
-    throw new Error('Missing NEXT_PUBLIC_WC_URL environment variable');
-}
+const wcUrl = process.env.NEXT_PUBLIC_WC_URL;
+const wcKey = process.env.WC_CONSUMER_KEY;
+const wcSecret = process.env.WC_CONSUMER_SECRET;
 
-if (!process.env.WC_CONSUMER_KEY) {
-    throw new Error('Missing WC_CONSUMER_KEY environment variable');
-}
-
-if (!process.env.WC_CONSUMER_SECRET) {
-    throw new Error('Missing WC_CONSUMER_SECRET environment variable');
+if (!wcUrl || !wcKey || !wcSecret) {
+    console.warn('⚠️ WooCommerce environment variables are missing. SDK initialization may fail at runtime.');
 }
 
 const WooCommerce = new WooCommerceRestApi({
-    url: process.env.NEXT_PUBLIC_WC_URL,
-    consumerKey: process.env.WC_CONSUMER_KEY,
-    consumerSecret: process.env.WC_CONSUMER_SECRET,
+    url: wcUrl || 'https://placeholder.com',
+    consumerKey: wcKey || 'ck_placeholder',
+    consumerSecret: wcSecret || 'cs_placeholder',
     version: "wc/v3",
     queryStringAuth: true // Required for some hosting environments
 });
