@@ -1,141 +1,104 @@
-import { supabase } from '../supabase/client';
+'use server';
+
+import WooCommerce from '../woocommerce';
 import { Product } from '../types';
+import { mapWooCommerceProduct } from '../woocommerce-utils';
+
+export async function getProductById(id: string): Promise<Product | null> {
+    try {
+        const response = await WooCommerce.get(`products/${id}`);
+        const data = response.data;
+        if (!data) return null;
+        return mapWooCommerceProduct(data);
+    } catch (error) {
+        console.error('Error fetching product by ID:', error);
+        return null;
+    }
+}
 
 interface GetProductsOptions {
     limit?: number;
     sort?: 'newest' | 'popular' | 'price_asc' | 'price_desc';
+    category?: number; // Filter by category ID
 }
 
 export async function getProducts(options?: GetProductsOptions) {
-    let query = supabase
-        .from('products')
-        .select(`
-            *,
-            category:categories(name, slug),
-            brand:brands(name, slug)
-        `);
+    try {
+        const params: any = {
+            per_page: options?.limit || 20,
+            status: 'publish',
+        };
 
-    // Sort
-    if (options?.sort === 'popular') {
-        // Fallback to created_at if review_count isn't reliable, but let's assume it is or use whatever metric
-        query = query.order('review_count', { ascending: false });
-    } else if (options?.sort === 'price_asc') {
-        query = query.order('price', { ascending: true });
-    } else if (options?.sort === 'price_desc') {
-        query = query.order('price', { ascending: false });
-    } else {
-        // Default: newest
-        query = query.order('created_at', { ascending: false });
-    }
+        if (options?.category) {
+            params.category = options.category;
+        }
 
-    // Limit
-    if (options?.limit) {
-        query = query.limit(options.limit);
-    }
+        // Sorting
+        if (options?.sort === 'popular') {
+            params.orderby = 'popularity';
+            params.order = 'desc';
+        } else if (options?.sort === 'price_asc') {
+            params.orderby = 'price';
+            params.order = 'asc';
+        } else if (options?.sort === 'price_desc') {
+            params.orderby = 'price';
+            params.order = 'desc';
+        } else {
+            params.orderby = 'date';
+            params.order = 'desc';
+        }
 
-    const { data, error } = await query;
-
-    if (error) {
+        const response = await WooCommerce.get('products', params);
+        return (response.data || []).map(mapWooCommerceProduct);
+    } catch (error) {
         console.error('Error fetching products:', error);
         return [];
     }
-
-    // Transform to match frontend types if needed
-    return data.map(product => ({
-        ...product,
-        category: product.category?.name,
-        categorySlug: product.category?.slug,
-        inStock: product.in_stock,
-    })) as Product[];
 }
 
 export async function getProductBySlug(slug: string) {
-    const { data, error } = await supabase
-        .from('products')
-        .select(`
-            *,
-            category:categories(name, slug),
-            brand:brands(name, slug),
-            variants:product_options(*)
-        `)
-        .eq('slug', slug)
-        .single();
-
-    if (error) {
-        console.error('Error fetching product:', error);
+    try {
+        const response = await WooCommerce.get('products', { slug });
+        const product = response.data?.[0];
+        if (!product) return null;
+        return mapWooCommerceProduct(product);
+    } catch (error) {
+        console.error('Error fetching product by slug:', error);
         return null;
     }
-
-    return {
-        ...data,
-        category: data.category?.name,
-        categorySlug: data.category?.slug,
-        variants: data.variants?.map((v: any) => ({
-            type: v.type,
-            name: v.name,
-            options: v.values
-        })),
-        inStock: data.in_stock,
-    } as Product;
 }
 
 export async function getProductsByCategory(categorySlug: string) {
-    // We need to fetch the category ID first to ensure reliable filtering
-    const { data: category } = await supabase
-        .from('categories')
-        .select('id')
-        .eq('slug', categorySlug)
-        .single();
+    try {
+        // First get the category ID
+        const catResponse = await WooCommerce.get('products/categories', { slug: categorySlug });
+        const category = catResponse.data?.[0];
+        if (!category) return [];
 
-    if (!category) return [];
-
-    const { data, error } = await supabase
-        .from('products')
-        .select(`
-            *,
-            category:categories(name, slug),
-            brand:brands(name, slug)
-        `)
-        .eq('category_id', category.id);
-
-    if (error) {
+        const response = await WooCommerce.get('products', {
+            category: category.id,
+            status: 'publish',
+            per_page: 50
+        });
+        return (response.data || []).map(mapWooCommerceProduct);
+    } catch (error) {
         console.error('Error fetching products by category:', error);
         return [];
     }
-
-    return data.map(product => ({
-        ...product,
-        category: product.category?.name,
-        categorySlug: product.category?.slug,
-        inStock: product.in_stock,
-    })) as Product[];
 }
 
 export async function searchProducts(query: string) {
     if (!query || query.length < 2) return [];
 
-    const { data, error } = await supabase
-        .from('products')
-        .select(`
-            id,
-            name,
-            slug,
-            price,
-            images,
-            category:categories(name, slug)
-        `)
-        .ilike('name', `%${query}%`)
-        .limit(6);
-
-    if (error) {
+    try {
+        const response = await WooCommerce.get('products', {
+            search: query,
+            status: 'publish',
+            per_page: 10
+        });
+        return (response.data || []).map(mapWooCommerceProduct);
+    } catch (error) {
         console.error('Error searching products:', error);
         return [];
     }
-
-    return (data || []).map((product: any) => ({
-        ...product,
-        category: Array.isArray(product.category) ? product.category[0]?.name : product.category?.name,
-        categorySlug: Array.isArray(product.category) ? product.category[0]?.slug : product.category?.slug,
-        inStock: true,
-    })) as Product[];
 }

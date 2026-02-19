@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { User, LogOut, Package, Heart, MapPin, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,17 +12,15 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import BoringAvatar from "boring-avatars";
 import { AVATAR_COLORS } from '@/lib/utils/avatars';
-import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
 export default function UserDropdown({ user, profile }: { user: any, profile?: any }) {
     const router = useRouter();
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
+        // Placeholder for WooCommerce/WP logout
         router.refresh();
         router.push('/');
     };

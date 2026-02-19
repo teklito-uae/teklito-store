@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { getWishlist } from '@/lib/store/wishlist';
 import { removeFromWishlist } from '@/lib/store/wishlist';
 import { addToCart } from '@/lib/store/cart';
-import { getProductById } from '@/lib/utils/product';
+import { getProductById } from '@/lib/actions/products';
 import { getImageUrl } from '@/lib/utils/image';
 import { Product } from '@/lib/types';
 import { toast } from 'sonner';

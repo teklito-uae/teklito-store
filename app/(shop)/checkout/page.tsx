@@ -1,25 +1,15 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    ChevronRight,
     CreditCard,
-    Truck,
     ShieldCheck,
     Lock,
     Package,
     ArrowLeft,
-    ArrowRight,
-    Mail,
-    Phone,
-    MapPin,
-    Building2,
-    Briefcase,
-    UserCircle,
-    ShoppingBag,
-    UserPlus
+    ShoppingBag
 } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
@@ -31,18 +21,15 @@ import { CartItemWithProduct } from '@/lib/types';
 import { toast } from 'sonner';
 import ProductImage from '@/components/product/ProductImage';
 import { createOrder } from '@/lib/actions/orders';
-import { supabase } from '@/lib/supabase/client';
 import OrderSuccess from '@/components/checkout/OrderSuccess';
 
 export default function CheckoutPage() {
     const router = useRouter();
     const [cartItems, setCartItems] = useState<CartItemWithProduct[]>([]);
     const [total, setTotal] = useState(0);
-    const [userId, setUserId] = useState<string | null>(null);
     const [paymentMethod, setPaymentMethod] = useState('cod');
     const [isProcessing, setIsProcessing] = useState(false);
     const [currentStep, setCurrentStep] = useState(1); // 1: Shipping, 2: Payment, 3: Review
-    const [isAuthChoiceMade, setIsAuthChoiceMade] = useState(false);
     const [tempOrderNumber, setTempOrderNumber] = useState('');
     const [isSessionLoading, setIsSessionLoading] = useState(true);
 
@@ -72,30 +59,6 @@ export default function CheckoutPage() {
 
             setCartItems(items);
             setTotal(cartTotal);
-
-            // Get User and Pre-fill data
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                const user = session.user;
-                setUserId(user.id);
-
-                // Fetch profile data
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('full_name, phone')
-                    .eq('id', user.id)
-                    .single();
-
-                setShippingInfo(prev => ({
-                    ...prev,
-                    fullName: profile?.full_name || user.user_metadata?.full_name || '',
-                    email: user.email || '',
-                    phone: profile?.phone || user.user_metadata?.phone || '',
-                }));
-
-                // If logged in, we bypass auth gate
-                setIsAuthChoiceMade(true);
-            }
             setIsSessionLoading(false);
         };
 
@@ -130,7 +93,6 @@ export default function CheckoutPage() {
     };
 
     const handlePlaceOrder = async () => {
-        // Generate temp order number for dramatic loader
         const orderNum = `TK-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
         setTempOrderNumber(orderNum);
         setIsProcessing(true);
@@ -140,7 +102,6 @@ export default function CheckoutPage() {
                 shippingInfo,
                 paymentMethod,
                 items: cartItems,
-                userId: userId || undefined
             });
 
             if (result.success) {
@@ -194,109 +155,6 @@ export default function CheckoutPage() {
         );
     }
 
-    if (!userId && !isAuthChoiceMade) {
-        return (
-            <div className="bg-zinc-50/30 min-h-screen p-4 flex flex-col items-center pt-8 md:pt-20">
-                <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    className="w-full max-w-4xl bg-white rounded-xl md:rounded-3xl shadow-xl overflow-hidden border border-zinc-100 flex flex-col md:flex-row"
-                >
-                    {/* Visual Side */}
-                    <div className="md:w-[45%] bg-black p-6 md:p-10 text-white flex flex-col justify-between relative overflow-hidden">
-                        <div className="relative z-10">
-                            <motion.div
-                                animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }}
-                                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                                className="w-12 h-12 md:w-14 md:h-14 bg-primary/20 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 border border-primary/30"
-                            >
-                                <ShieldCheck className="w-6 h-6 text-primary" />
-                            </motion.div>
-                            <h2 className="text-xl md:text-2xl font-black uppercase tracking-tighter mb-2 leading-none">The Teklito <span className="text-primary italic">Vault.</span></h2>
-                            <p className="text-zinc-500 font-medium text-[11px] md:text-sm">Secure your tech with industry-leading encryption and member-only protection.</p>
-                        </div>
-
-                        <div className="mt-8 space-y-4 relative z-10 hidden md:block">
-                            {[
-                                { icon: ShieldCheck, text: "Encrypted Payments" },
-                                { icon: Package, text: "Track Every Shipment" },
-                                { icon: ArrowRight, text: "Priority Support" }
-                            ].map((item, i) => (
-                                <div key={i} className="flex items-center gap-3">
-                                    <item.icon className="w-4 h-4 text-primary" />
-                                    <span className="text-[10px] font-bold tracking-widest uppercase text-zinc-400">{item.text}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Decor */}
-                        <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-primary/10 blur-[80px] rounded-full" />
-                    </div>
-
-                    {/* Choice Side */}
-                    <div className="md:w-[55%] p-6 md:p-10 flex flex-col">
-                        <div className="space-y-4 mb-6">
-                            <Button
-                                onClick={() => router.push('/auth/login?redirect=/checkout')}
-                                className="w-full h-14 rounded-lg md:rounded-xl bg-black text-primary hover:bg-zinc-900 group transition-all"
-                            >
-                                <div className="flex items-center gap-3 md:gap-4 text-left w-full px-2">
-                                    <UserCircle className="w-5 h-5" />
-                                    <div>
-                                        <p className="text-[9px] font-black uppercase tracking-widest opacity-60">Already a Member</p>
-                                        <p className="text-xs font-bold uppercase tracking-tight">Login to Account</p>
-                                    </div>
-                                </div>
-                            </Button>
-
-                            <div className="relative py-2">
-                                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-zinc-100" /></div>
-                                <div className="relative flex justify-center text-[9px] uppercase font-black text-zinc-300 tracking-[0.2em] bg-white px-4">or</div>
-                            </div>
-
-                            <Button
-                                variant="outline"
-                                onClick={() => setIsAuthChoiceMade(true)}
-                                className="w-full h-14 rounded-lg md:rounded-xl border-2 border-zinc-100 hover:border-zinc-200 hover:bg-zinc-50 group transition-all"
-                            >
-                                <div className="flex items-center gap-3 md:gap-4 text-left w-full px-2">
-                                    <ShoppingBag className="w-5 h-5 text-zinc-400 group-hover:text-black transition-colors" />
-                                    <div>
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">New Guest</p>
-                                        <p className="text-xs font-bold uppercase tracking-tight text-black">Checkout as Guest</p>
-                                    </div>
-                                </div>
-                            </Button>
-                        </div>
-
-                        {/* Benefits Section */}
-                        <div className="mt-auto pt-6 border-t border-zinc-50">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-black mb-3 italic">Why join Teklito?</p>
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                                {[
-                                    "Save delivery addresses",
-                                    "View order history",
-                                    "Exclusive member prices",
-                                    "Faster 1-tap checkout",
-                                    "Earn loyalty points",
-                                    "Priority tech support"
-                                ].map((benefit, i) => (
-                                    <div key={i} className="flex items-start gap-2">
-                                        <div className="w-1 h-1 bg-primary rounded-full mt-1.5 flex-shrink-0" />
-                                        <span className="text-[10px] leading-tight text-zinc-500 font-medium">{benefit}</span>
-                                    </div>
-                                ))}
-                            </div>
-                            <p className="text-[9px] text-zinc-400 text-center mt-6">
-                                By continuing, you agree to our <span className="underline cursor-pointer hover:text-black">Terms of Service</span>.
-                            </p>
-                        </div>
-                    </div>
-                </motion.div>
-            </div>
-        );
-    }
-
     return (
         <div className="bg-zinc-50/30 min-h-screen pb-20 font-sans relative">
             <AnimatePresence>
@@ -335,7 +193,6 @@ export default function CheckoutPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-            {/* Minimal Header */}
             <div className="border-b border-zinc-100 bg-white">
                 <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                     <Link href="/cart" className="flex items-center gap-2 text-xs font-bold text-zinc-500 hover:text-black transition-colors">
@@ -343,7 +200,6 @@ export default function CheckoutPage() {
                         Back to Cart
                     </Link>
 
-                    {/* Stepper Indicators */}
                     <div className="hidden md:flex items-center gap-8">
                         {['Shipping', 'Payment', 'Review'].map((step, i) => {
                             const stepNum = i + 1;
@@ -375,7 +231,6 @@ export default function CheckoutPage() {
 
             <div className="container mx-auto px-4 py-8 max-w-6xl">
                 <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-                    {/* LEFT COLUMN: Steps */}
                     <div className="flex-1">
                         <div className="mb-6">
                             <h1 className="text-2xl font-bold text-black tracking-tight mb-2">
@@ -383,14 +238,8 @@ export default function CheckoutPage() {
                                 {currentStep === 2 && 'Payment Method'}
                                 {currentStep === 3 && 'Review Order'}
                             </h1>
-                            <p className="text-sm text-zinc-500">
-                                {currentStep === 1 && 'Please enter your delivery information.'}
-                                {currentStep === 2 && 'Select how you would like to pay.'}
-                                {currentStep === 3 && 'Review your order details before confirming.'}
-                            </p>
                         </div>
 
-                        {/* Step 1: Shipping */}
                         {currentStep === 1 && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                                 <div className="bg-white p-6 md:p-8 rounded-[5px] border border-zinc-200 shadow-sm">
@@ -418,7 +267,7 @@ export default function CheckoutPage() {
                                                 placeholder="john@example.com"
                                             />
                                         </div>
-                                        <div className="space-y-2 col-span-2 md:col-span-1">
+                                        <div className="space-y-2">
                                             <Label htmlFor="phone" className="text-xs font-bold text-zinc-700">Phone Number</Label>
                                             <Input
                                                 id="phone"
@@ -473,28 +322,16 @@ export default function CheckoutPage() {
                             </div>
                         )}
 
-                        {/* Step 2: Payment */}
                         {currentStep === 2 && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                                 <div className="bg-white p-6 md:p-8 rounded-[5px] border border-zinc-200 shadow-sm">
                                     <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-4">
-                                        <div className={`relative flex items-center space-x-4 rounded-[5px] border p-4 cursor-pointer transition-all ${paymentMethod === 'cod' ? 'border-black bg-zinc-50' : 'border-zinc-200 hover:border-zinc-300'}`}>
+                                        <div className={`relative flex items-center space-x-4 rounded-[5px] border p-4 cursor-pointer transition-all ${paymentMethod === 'cod' ? 'border-primary bg-zinc-50' : 'border-zinc-200 hover:border-zinc-300'}`}>
                                             <RadioGroupItem value="cod" id="cod" />
                                             <Label htmlFor="cod" className="flex-1 cursor-pointer">
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-sm font-bold text-black">Cash on Delivery</span>
                                                     <Package className="h-5 w-5 text-zinc-500" />
-                                                </div>
-                                                <p className="text-xs text-zinc-500 mt-1">Pay when you receive your order.</p>
-                                            </Label>
-                                        </div>
-
-                                        <div className="relative flex items-center space-x-4 rounded-[5px] border border-zinc-200 p-4 opacity-60 cursor-not-allowed">
-                                            <RadioGroupItem value="card" id="card" disabled />
-                                            <Label htmlFor="card" className="flex-1">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-sm font-bold text-zinc-400">Credit Card (Coming Soon)</span>
-                                                    <CreditCard className="h-5 w-5 text-zinc-300" />
                                                 </div>
                                             </Label>
                                         </div>
@@ -511,12 +348,9 @@ export default function CheckoutPage() {
                             </div>
                         )}
 
-                        {/* Step 3: Review */}
                         {currentStep === 3 && (
                             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                                 <div className="bg-white p-6 md:p-8 rounded-[5px] border border-zinc-200 shadow-sm space-y-6">
-
-                                    {/* Shipping Review */}
                                     <div className="bg-zinc-50 p-4 rounded-[5px]">
                                         <div className="flex items-center justify-between mb-2">
                                             <h3 className="text-xs font-bold uppercase tracking-wide text-zinc-500">Shipping To</h3>
@@ -527,15 +361,13 @@ export default function CheckoutPage() {
                                         <p className="text-sm text-zinc-600">{shippingInfo.phone}</p>
                                     </div>
 
-                                    {/* Payment Review */}
                                     <div className="bg-zinc-50 p-4 rounded-[5px]">
                                         <div className="flex items-center justify-between mb-2">
                                             <h3 className="text-xs font-bold uppercase tracking-wide text-zinc-500">Payment Method</h3>
                                             <button onClick={() => setCurrentStep(2)} className="text-[10px] font-bold text-blue-600 hover:underline">Edit</button>
                                         </div>
-                                        <p className="text-sm font-bold text-black">{paymentMethod === 'cod' ? 'Cash on Delivery' : 'Online Payment'}</p>
+                                        <p className="text-sm font-bold text-black">Cash on Delivery</p>
                                     </div>
-
                                 </div>
 
                                 <div className="flex justify-between">
@@ -554,7 +386,6 @@ export default function CheckoutPage() {
                         )}
                     </div>
 
-                    {/* RIGHT COLUMN: Order Summary (Always Visible) */}
                     <div className="w-full lg:w-[380px] flex-shrink-0">
                         <div className="sticky top-24 bg-white p-6 rounded-[5px] border border-zinc-200 shadow-sm">
                             <h2 className="text-lg font-bold text-black mb-6">Order Summary</h2>
@@ -581,9 +412,7 @@ export default function CheckoutPage() {
                                 ))}
                             </div>
 
-                            <Separator className="bg-zinc-100 my-4" />
-
-                            <div className="space-y-3">
+                            <div className="space-y-3 border-t border-zinc-100 pt-4">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-zinc-500">Subtotal</span>
                                     <span className="font-bold text-black">${total.toFixed(2)}</span>
@@ -599,20 +428,10 @@ export default function CheckoutPage() {
                                     <span className="text-2xl font-black text-black">${finalTotal.toFixed(2)}</span>
                                 </div>
                             </div>
-
-                            <div className="mt-6 flex items-center justify-center gap-2 text-[10px] text-zinc-400 font-medium">
-                                <ShieldCheck className="h-3 w-3" />
-                                Secure Checkout
-                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     );
-}
-
-// Helper components that were likely missing or assumed
-function Separator({ className }: { className?: string }) {
-    return <div className={`h-[1px] w-full ${className || 'bg-zinc-200'}`} />;
 }

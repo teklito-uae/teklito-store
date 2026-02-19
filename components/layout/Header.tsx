@@ -4,14 +4,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart, Heart, Search, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useState, useEffect } from 'react';
 import { getCartItemCount } from '@/lib/store/cart';
 import { getWishlistCount } from '@/lib/store/wishlist';
 import CategorySidebar from '@/components/home/CategorySidebar';
 import SearchDialog from '@/components/shared/SearchDialog';
 import UserDropdown from '@/components/layout/UserDropdown';
-import { supabase } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 import { Category } from '@/lib/types';
 
@@ -25,12 +23,11 @@ export default function Header({ categories }: HeaderProps) {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
-    const [user, setUser] = useState<any>(null);
-    const [profile, setProfile] = useState<any>(null);
 
-    // Filter main categories for desktop nav (limit to 4-5)
-    // Actually, user wants "All Categories" as marquee in top bar.
-    // For main navbar, let's keep the most popular ones or just links.
+    // Auth placeholders as we refactor away from Supabase
+    const user = null;
+    const profile = null;
+
     const mainCategories = categories.slice(0, 5);
 
     useEffect(() => {
@@ -44,61 +41,21 @@ export default function Header({ categories }: HeaderProps) {
             setIsScrolled(window.scrollY > 40);
         };
 
-        const getUser = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            const currentUser = session?.user || null;
-            setUser(currentUser);
-
-            if (currentUser) {
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', currentUser.id)
-                    .single();
-                setProfile(profile);
-            } else {
-                setProfile(null);
-            }
-        };
-
         window.addEventListener('cart-updated', handleCartUpdate);
         window.addEventListener('wishlist-updated', handleWishlistUpdate);
         window.addEventListener('scroll', handleScroll);
-
-        getUser();
-
-        // Listen for auth changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            const currentUser = session?.user || null;
-            setUser(currentUser);
-
-            if (currentUser) {
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', currentUser.id)
-                    .single();
-                setProfile(profile);
-            } else {
-                setProfile(null);
-            }
-        });
 
         return () => {
             window.removeEventListener('cart-updated', handleCartUpdate);
             window.removeEventListener('wishlist-updated', handleWishlistUpdate);
             window.removeEventListener('scroll', handleScroll);
-            subscription.unsubscribe();
         };
     }, []);
 
-    // Styles based on scroll state
     const headerBg = isScrolled ? 'bg-black/95 backdrop-blur-md border-zinc-900 shadow-md' : 'bg-white border-zinc-100';
-    const textColor = isScrolled ? 'text-white' : 'text-black';
-    const primaryText = isScrolled ? 'text-primary' : 'text-black'; // "use our primary color for text"
     const iconColor = isScrolled ? 'text-primary' : 'text-zinc-800';
     const inputBg = isScrolled ? 'bg-zinc-900 border-primary/30 text-white placeholder:text-zinc-500' : 'bg-zinc-50 border-zinc-100 text-black';
-    const logoBrightness = isScrolled ? 'brightness-0 invert' : ''; // White logo on black
+    const logoBrightness = isScrolled ? 'brightness-0 invert' : '';
 
     return (
         <>
@@ -108,7 +65,6 @@ export default function Header({ categories }: HeaderProps) {
             )}>
                 <div className="container mx-auto px-4 py-3">
                     <div className="flex items-center justify-between gap-4">
-                        {/* Left: Mobile "All Categories" */}
                         <div className="flex items-center gap-1 lg:hidden">
                             <Button
                                 variant="ghost"
@@ -120,7 +76,6 @@ export default function Header({ categories }: HeaderProps) {
                             </Button>
                         </div>
 
-                        {/* Logo */}
                         <Link href="/" className="flex items-center group relative lg:mr-auto pl-2 md:pl-0">
                             <Image
                                 src="/images/teklito-logo.webp"
@@ -132,7 +87,6 @@ export default function Header({ categories }: HeaderProps) {
                             />
                         </Link>
 
-                        {/* Desktop Navigation */}
                         <nav className="hidden lg:flex items-center gap-1 mx-8 uppercase">
                             <Link href="/" className={cn("px-4 py-2 text-[12px] font-bold tracking-wider transition-colors relative group", isScrolled ? "text-zinc-300 hover:text-primary" : "text-zinc-500 hover:text-black")}>
                                 Home
@@ -154,9 +108,7 @@ export default function Header({ categories }: HeaderProps) {
                             ))}
                         </nav>
 
-                        {/* Action Buttons */}
                         <div className="flex items-center gap-1 lg:gap-2">
-                            {/* Mobile Search Trigger */}
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -166,7 +118,6 @@ export default function Header({ categories }: HeaderProps) {
                                 <Search className="h-5 w-5" />
                             </Button>
 
-                            {/* Desktop Search Trigger (Now uses Dialog as requested) */}
                             <div className="hidden md:block relative mr-2">
                                 <Button
                                     variant="ghost"
@@ -178,7 +129,6 @@ export default function Header({ categories }: HeaderProps) {
                                 </Button>
                             </div>
 
-                            {/* Wishlist */}
                             <Button variant="ghost" size="icon" className={cn("hidden lg:flex relative h-10 w-10 hover:bg-transparent", iconColor)} asChild>
                                 <Link href="/wishlist">
                                     <Heart className="h-5 w-5" />
@@ -192,7 +142,6 @@ export default function Header({ categories }: HeaderProps) {
                                 </Link>
                             </Button>
 
-                            {/* Cart */}
                             <Button variant="ghost" size="icon" className={cn("hidden lg:flex relative h-10 w-10 hover:bg-transparent", iconColor)} asChild>
                                 <Link href="/cart">
                                     <ShoppingCart className="h-5 w-5" />
@@ -206,7 +155,6 @@ export default function Header({ categories }: HeaderProps) {
                                 </Link>
                             </Button>
 
-                            {/* User Profile / Dropdown */}
                             <div className={cn("flex items-center", isScrolled ? "text-primary" : "")}>
                                 <UserDropdown user={user} profile={profile} />
                             </div>
@@ -214,7 +162,6 @@ export default function Header({ categories }: HeaderProps) {
                     </div>
                 </div>
 
-                {/* Modals */}
                 <SearchDialog
                     open={isSearchOpen}
                     onOpenChange={setIsSearchOpen}

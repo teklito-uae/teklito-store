@@ -13,19 +13,20 @@ import { ArrowRight, Truck, ShieldCheck, Headset, Lock } from 'lucide-react';
 import SEOFooter from '@/components/home/SEOFooter';
 
 import PitakaPromotion from '@/components/home/PitakaPromotion';
+import { Product } from '@/lib/types';
 
 export default async function HomePage() {
-  const allProducts = await getProducts();
+  const allProducts: Product[] = await getProducts();
   const categories = await getCategories();
 
   // Transformation logic to match previous helper functions
-  const featured = allProducts.filter(p => p.discount && p.discount > 10).slice(0, 15);
-  const newArrivals = [...allProducts].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 15);
-  const bestSellers = [...allProducts].sort((a, b) => b.reviewCount - a.reviewCount).slice(0, 15);
+  const featured = allProducts.filter((p: Product) => p.discount && p.discount > 10).slice(0, 15);
+  const newArrivals = [...allProducts].sort((a: Product, b: Product) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 15);
+  const bestSellers = [...allProducts].sort((a: Product, b: Product) => b.reviewCount - a.reviewCount).slice(0, 15);
 
-  const mobiles = allProducts.filter(p => p.categorySlug === 'mobiles').slice(0, 15);
-  const watches = allProducts.filter(p => p.categorySlug === 'watches').slice(0, 15);
-  const cases = allProducts.filter(p => p.categorySlug === 'phone-cases').slice(0, 15);
+  const mobiles = allProducts.filter((p: Product) => p.categorySlug === 'mobiles').slice(0, 15);
+  const watches = allProducts.filter((p: Product) => p.categorySlug === 'watches').slice(0, 15);
+  const cases = allProducts.filter((p: Product) => p.categorySlug === 'phone-cases').slice(0, 15);
 
   return (
     <div className="min-h-screen">

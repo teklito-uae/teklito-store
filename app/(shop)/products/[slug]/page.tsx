@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getProductBySlug, getProductsByCategory } from '@/lib/actions/products';
 import ProductDetails from '@/components/product/ProductDetails';
+import { Product } from '@/lib/types';
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
@@ -13,7 +14,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
     const allRelatedProducts = await getProductsByCategory(product.categorySlug);
     const relatedProducts = allRelatedProducts
-        .filter(p => p.id !== product.id)
+        .filter((p: Product) => p.id !== product.id)
         .slice(0, 4);
 
     return <ProductDetails product={product} relatedProducts={relatedProducts} />;
