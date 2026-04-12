@@ -42,26 +42,30 @@ jobs:
         run: |
           composer install --optimize-autoloader --no-dev
 
-      - name: Prepare Hostinger Structure (Stitching)
+      - name: Prepare Hostinger Structure
         run: |
-          # 1. Create a fresh deployment directory
           mkdir _deployment
           
-          # 2. Copy the entire backend into it
-          cp -r backend/* _deployment/
-          cp -r backend/.[!.]* _deployment/ 2>/dev/null || true
+          # 1. Copy the backend (and remove its gitignore so /vendor is pushed)
+          cp -r backend _deployment/
+          rm -f _deployment/backend/.gitignore
           
-          # 3. Move the compiled React frontend into Laravel's public folder
-          cp -r frontend/dist/* _deployment/public/
+          # 2. Copy the compiled frontend explicitly into a frontend folder
+          mkdir -p _deployment/frontend
+          cp -r frontend/dist _deployment/frontend/
           
-      - name: Setup Custom .htaccess for Hostinger
-        run: |
+          # 3. Create intelligent routing at the domain root
           cat << 'EOF' > _deployment/.htaccess
           <IfModule mod_rewrite.c>
               RewriteEngine On
               
-              # Point the domain root securely to the Laravel "public" folder
-              RewriteRule ^(.*)$ public/$1 [L]
+              # Route any requests starting with /api to the Laravel backend
+              RewriteCond %{REQUEST_URI} ^/api [NC]
+              RewriteRule ^(.*)$ backend/public/$1 [L]
+
+              # Route everything else to the compiled React frontend
+              RewriteCond %{REQUEST_URI} !^/backend/public/
+              RewriteRule ^(.*)$ frontend/dist/$1 [L]
           </IfModule>
           EOF
 

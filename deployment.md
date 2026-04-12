@@ -23,8 +23,8 @@ We will create a GitHub Action workflow (`.github/workflows/deploy.yml`) that do
   - Setup PHP.
   - Run `composer install --optimize-autoloader --no-dev`.
 - **Artifact Compilation (The "Release" Package):**
-  - Move the built frontend files (`frontend/dist/*`) into the backend's public directory (`backend/public/`), or structure it appropriately for the Hostinger `public_html` root.
-  - Move customized `.htaccess` routing files to ensure React Router works correctly alongside the Laravel API.
+  - Keeps the codebase physically separated: It copies the `backend` folder (stripping its ignored rules) and places your built React assets in a `frontend/dist` folder.
+  - Generates an intelligent `.htaccess` at the root to seamlessly route `/api` traffic to the Laravel backend and normal traffic to the React frontend.
 - **Push to Production Branch:**
   - Commit the final compiled project (no raw React/Node modules, only compiled assets and optimized backend code) to the `production` branch using a bot account.
 
@@ -35,10 +35,11 @@ Hostinger shared hosting doesn't provide Node.js environments to run `npm run bu
 
 ## 2. Directory Structure on Hostinger
 
-To ensure better security on shared hosting:
-- The Laravel core (app, routes, config, vendor) should ideally sit *above* or outside `public_html`.
-- Only the contents of `backend/public/` (and the injected frontend `dist/` files) should be inside Hostinger's `public_html`.
-- We will configure the action to structure the `production` branch such that the repository structure maps cleanly to Hostinger's folder hierarchy.
+To ensure reliable shared hosting operation, the `production` branch pushes the following structure directly to your `public_html`:
+
+- `backend/` (Contains the built Laravel logic & synced `/vendor` dependencies)
+- `frontend/dist/` (Contains your compiled HTML, JS, and CSS)
+- `.htaccess` (A master routing file telling Apache how to direct traffic between the two)
 
 ---
 
