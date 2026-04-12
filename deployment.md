@@ -101,3 +101,21 @@ When you are ready to implement this, reply with **"Let's code the GitHub Action
 1. Write the `.github/workflows/deploy.yml`.
 2. Write the production `.htaccess` file.
 3. Setup the build scripts to wire up the frontend to the backend correctly.
+
+---
+
+## 4. Deployment Troubleshooting & Final Configuration Log (April 13th)
+
+During our initial push to Hostinger, several critical environment-specific issues were resolved. Keep this in mind for all future development:
+
+### 1. Divergent Branch History (Hostinger Pull Error)
+Initially, our GitHub Action forcefully wiped and recreated the `production` branch. Hostinger's git integration could not `git pull` this successfully (throwing "divergent branch"). We updated `.github/workflows/deploy.yml` to clone the existing production branch, copy the built files, and run standard chronologically-safe commits.
+
+### 2. Relative API Endpoints (CORS Security Fix)
+Hardcoding `www.teklito.store/api` in the codebase triggered severe browser CORS blocks whenever a user visited the bare URL (`teklito.store`). To solve this completely, we updated `frontend/src/lib/api.ts` to rely on the relative `/api` path. It dynamically adapts to the host URL.
+
+### 3. Smart SPA Routing (.htaccess)
+Hostinger couldn't handle deep links in our SPA (Single Page Application). If someone visited `teklito.store/products`, the server 404'd because `products.html` didn't exist. We generated a master `.htaccess` file at the root of `production` that pushes everything to `frontend/dist/index.html` unless it begins with `/api` or targets an existing file.
+
+### 4. Database Setup & Web-Artisan
+We discovered `php artisan` SSH could be bypassed. By introducing the temporary `/api/setup-database` route, we could trigger remote DB migrations and seeding seamlessly via the browser. Additionally, we renamed our migrations to ensure alphabetical order exactly matched our dependency order (e.g., `products` before `product_variants` to avoid foreign key failures).
