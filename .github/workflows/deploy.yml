@@ -3,11 +3,16 @@ name: Deploy to Hostinger Production
 on:
   push:
     branches:
-      - master # Triggers when you merge into master
+      - master
+      - teklito_dev # Triggers on dev as well for testing
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     
     steps:
       - name: Checkout Code
@@ -16,7 +21,7 @@ jobs:
       - name: Setup Node.js for Frontend
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
