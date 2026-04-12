@@ -1,0 +1,82 @@
+name: Deploy to Hostinger Production
+
+on:
+  push:
+    branches:
+      - master # Triggers when you merge into master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js for Frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install & Build Frontend
+        working-directory: ./frontend
+        run: |
+          npm install
+          npm run build
+
+      - name: Setup PHP for Backend
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3' # Hostinger standard
+          tools: composer:v2
+          
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: |
+          composer install --optimize-autoloader --no-dev
+
+      - name: Prepare Hostinger Structure (Stitching)
+        run: |
+          # 1. Create a fresh deployment directory
+          mkdir _deployment
+          
+          # 2. Copy the entire backend into it
+          cp -r backend/* _deployment/
+          cp -r backend/.[!.]* _deployment/ 2>/dev/null || true
+          
+          # 3. Move the compiled React frontend into Laravel's public folder
+          cp -r frontend/dist/* _deployment/public/
+          
+      - name: Setup Custom .htaccess for Hostinger
+        run: |
+          cat << 'EOF' > _deployment/.htaccess
+          <IfModule mod_rewrite.c>
+              RewriteEngine On
+              
+              # Point the domain root securely to the Laravel "public" folder
+              RewriteRule ^(.*)$ public/$1 [L]
+          </IfModule>
+          EOF
+
+      - name: Configure Git Bot
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+
+      - name: Push to Production Branch
+        run: |
+          cd _deployment
+          
+          # Initialize a new git repository in the compiled folder
+          git init
+          git checkout -b production
+          
+          # Add all compiled files
+          git add .
+          git commit -m "🚀 Auto-build & Compilation for Production: ${GITHUB_SHA::7}"
+          
+          # Force push to the production branch on the original remote
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push -u origin production --force
