@@ -72,16 +72,20 @@ jobs:
 
       - name: Push to Production Branch
         run: |
-          cd _deployment
+          # Clone the current repository so we have its git history
+          git clone --branch production https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git prod_branch || git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git prod_branch
           
-          # Initialize a new git repository in the compiled folder
-          git init
-          git checkout -b production
+          cd prod_branch
+          git checkout -B production
           
-          # Add all compiled files
+          # Wipe everything inside except the hidden .git directory to keep history
+          find . -maxdepth 1 ! -name '.git' ! -name '.' ! -name '..' -exec rm -rf {} +
+          
+          # Copy the newly built files over
+          cp -r ../_deployment/* ./
+          cp -r ../_deployment/.[!.]* ./ 2>/dev/null || true
+          
+          # Commit normally so Hostinger can fast-forward pull
           git add .
-          git commit -m "🚀 Auto-build & Compilation for Production: ${GITHUB_SHA::7}"
-          
-          # Force push to the production branch on the original remote
-          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git push -u origin production --force
+          git commit -m "🚀 Auto-build & Compilation: ${GITHUB_SHA::7}" || echo "No changes to commit"
+          git push origin production
