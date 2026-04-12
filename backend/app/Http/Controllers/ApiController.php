@@ -63,9 +63,12 @@ class ApiController extends Controller
         }
 
         $shipping = $subtotal >= 200 ? 0 : 20;
+        
+        // Dynamically fetch Sanctum user securely if a token was passed, otherwise null (Guest)
+        $userId = auth('sanctum')->check() ? auth('sanctum')->id() : null;
 
         $order = Order::create([
-            'user_id' => $request->user()?->id,
+            'user_id' => $userId,
             'order_number' => 'TKL-' . date('Y') . '-' . strtoupper(Str::random(6)),
             'status' => 'pending',
             'subtotal' => $subtotal,
