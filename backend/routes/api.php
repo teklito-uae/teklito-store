@@ -2,7 +2,20 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\ApiController;
+
+Route::get('/setup-database', function () {
+    try {
+        Artisan::call('migrate:fresh', ['--force' => true]);
+        Artisan::call('db:seed', ['--force' => true]);
+        Artisan::call('storage:link');
+        Artisan::call('config:cache');
+        return response()->json(['message' => 'Database fully migrated and seeded!']);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
 
 // Public routes
 Route::get('/products', [ApiController::class, 'getProducts']);
