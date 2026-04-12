@@ -1,0 +1,1 @@
+import{t as e}from"./useQuery-DsAvOwY1.js";import{t}from"./auth-CfPlFlSh.js";import{n,r}from"./orders-Cm2jKZgn.js";var i=()=>e({queryKey:[`my-orders`],queryFn:n,enabled:t(e=>e.isAuthenticated),staleTime:1e3*60*2}),a=t=>e({queryKey:[`order`,t],queryFn:()=>r(t),enabled:!!t});export{a as n,i as t};

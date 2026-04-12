@@ -1,0 +1,1 @@
+import{t as e}from"./useQuery-DsAvOwY1.js";import{t}from"./api-k1T0FgS3.js";var n=async()=>(await t.get(`/categories`)).data??[],r=async e=>(await t.get(`/categories/${e}`)).data??null,i=()=>e({queryKey:[`categories`],queryFn:n,staleTime:1e3*60*10}),a=t=>e({queryKey:[`category`,t],queryFn:()=>r(t),enabled:!!t,staleTime:1e3*60*10});export{a as n,i as t};
