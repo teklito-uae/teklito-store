@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useOrderById } from '@/hooks/useOrders';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,9 +9,19 @@ import { cn } from '@/lib/utils';
 const statusSteps = ['pending', 'processing', 'shipped', 'delivered'];
 
 export default function TrackOrderPage() {
-  const [orderId, setOrderId] = useState('');
-  const [searched, setSearched] = useState('');
+  const [searchParams] = useSearchParams();
+  const urlId = searchParams.get('id') || '';
+  
+  const [orderId, setOrderId] = useState(urlId);
+  const [searched, setSearched] = useState(urlId);
   const { data: order, isLoading, isError } = useOrderById(searched);
+
+  useEffect(() => {
+    if (urlId) {
+      setSearched(urlId);
+      setOrderId(urlId);
+    }
+  }, [urlId]);
 
   const currentStep = statusSteps.indexOf(order?.status ?? '');
 
@@ -31,7 +42,7 @@ export default function TrackOrderPage() {
               value={orderId}
               onChange={(e) => setOrderId(e.target.value)}
               placeholder="e.g. TKL-2024-001"
-              className="h-12 rounded-[5px] border-zinc-200 bg-zinc-50 text-sm font-medium flex-1"
+              className="h-12 rounded-[5px] border-zinc-200 bg-zinc-50 text-base md:text-sm font-medium flex-1"
               onKeyDown={(e) => { if (e.key === 'Enter') setSearched(orderId.trim()); }}
             />
             <Button

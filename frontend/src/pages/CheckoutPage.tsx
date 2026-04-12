@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuthStore } from '@/lib/store/auth';
 import { useCartStore, SHIPPING_THRESHOLD, STANDARD_SHIPPING_FEE } from '@/lib/store/cart';
 import { useProducts } from '@/hooks/useProducts';
 import { createOrder } from '@/lib/api/orders';
@@ -30,6 +31,7 @@ type CheckoutForm = z.infer<typeof checkoutSchema>;
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, clearCart } = useCartStore();
+  const { user } = useAuthStore();
   const { data: allProducts = [] } = useProducts({ limit: 200 });
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'card'>('cod');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,7 +39,11 @@ export default function CheckoutPage() {
 
   const { register, handleSubmit, formState: { errors } } = useForm<CheckoutForm>({
     resolver: zodResolver(checkoutSchema),
-    defaultValues: { country: 'UAE' },
+    defaultValues: { 
+      country: 'UAE',
+      fullName: user?.name || '',
+      email: user?.email || '',
+    },
   });
 
   const cartItems = items.map((item) => ({
@@ -84,9 +90,15 @@ export default function CheckoutPage() {
           <p className="text-[11px] font-black uppercase tracking-widest text-primary">{orderSuccess.orderNumber}</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4">
-          <Button asChild className="h-12 px-6 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary hover:text-black transition-all">
-            <Link to="/orders">View My Orders</Link>
-          </Button>
+          {user ? (
+            <Button asChild className="h-12 px-6 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary hover:text-black transition-all">
+              <Link to="/orders">View My Orders</Link>
+            </Button>
+          ) : (
+            <Button asChild className="h-12 px-6 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary hover:text-black transition-all">
+              <Link to={`/track?id=${orderSuccess.orderNumber}`}>Track Your Order</Link>
+            </Button>
+          )}
           <Button asChild variant="outline" className="h-12 px-6 text-[10px] font-black uppercase tracking-widest rounded-xl">
             <Link to="/products">Continue Shopping</Link>
           </Button>
@@ -105,7 +117,7 @@ export default function CheckoutPage() {
     );
   }
 
-  const inputClass = 'h-11 rounded-[5px] border-zinc-200 bg-zinc-50 focus:border-black focus:ring-0 text-sm font-medium placeholder:text-zinc-400';
+  const inputClass = 'h-11 rounded-[5px] border-zinc-200 bg-zinc-50 focus:border-black focus:ring-0 text-base md:text-sm font-medium placeholder:text-zinc-400';
 
   return (
     <div className="min-h-screen bg-zinc-50/50">

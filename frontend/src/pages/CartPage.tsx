@@ -8,7 +8,8 @@ import { getImageUrl } from '@/lib/utils/image';
 import { cn } from '@/lib/utils';
 import EmptyState from '@/components/shared/EmptyState';
 import ProductCard from '@/components/product/ProductCard';
-import { useMemo } from 'react';
+import { useAuthStore } from '@/lib/store/auth';
+import { useMemo, useState } from 'react';
 
 const trustItems = [
   { icon: Shield, label: 'Secure Payment', sub: 'SSL Encrypted' },
@@ -18,8 +19,10 @@ const trustItems = [
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, getItemCount } = useCartStore();
+  const { user } = useAuthStore();
   const { data: allProducts = [] } = useProducts({ limit: 200 });
   const navigate = useNavigate();
+  const [showGuestModal, setShowGuestModal] = useState(false);
 
   const cartItems = items.map((item) => ({
     ...item,
@@ -173,7 +176,7 @@ export default function CartPage() {
                 </p>
               </div>
 
-              <Button onClick={() => navigate('/checkout')} className="w-full h-13 bg-black text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-primary hover:text-black transition-all flex items-center justify-center gap-2 mb-3">
+              <Button onClick={() => user ? navigate('/checkout') : setShowGuestModal(true)} className="w-full h-13 bg-black text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-xl hover:bg-primary hover:text-black transition-all flex items-center justify-center gap-2 mb-3">
                 Checkout <ArrowRight className="h-4 w-4" />
               </Button>
 
@@ -213,6 +216,29 @@ export default function CartPage() {
           </div>
         )}
       </div>
+
+      {/* Guest Checkout Modal */}
+      {showGuestModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-sm bg-white rounded-3xl p-8 relative shadow-2xl">
+            <h3 className="text-xl font-black uppercase tracking-tight text-black mb-2 text-center">Ready to Checkout?</h3>
+            <p className="text-sm font-medium text-zinc-500 mb-8 text-center">Signing in speeds up checkout and lets you track all future orders instantly.</p>
+            
+            <div className="space-y-3">
+              <Button onClick={() => navigate('/login')} className="w-full h-12 bg-black text-white text-[11px] font-black uppercase tracking-widest rounded-xl">
+                Sign In & Checkout
+              </Button>
+              <Button onClick={() => navigate('/checkout')} variant="outline" className="w-full h-12 text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-zinc-50">
+                Continue as Guest
+              </Button>
+            </div>
+            
+            <button onClick={() => setShowGuestModal(false)} className="absolute top-4 right-4 text-zinc-400 hover:text-black transition-colors">
+              <Plus className="h-6 w-6 rotate-45" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
