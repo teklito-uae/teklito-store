@@ -36,18 +36,19 @@ export default function RegisterPage() {
       toast.success('Account created! Welcome to Teklito.');
       navigate('/');
     } catch (err: any) {
-      toast.error(err?.response?.data?.error || 'Registration failed');
+      const apiMessage = err?.response?.data?.message || err?.response?.data?.error;
+      toast.error(apiMessage || 'Registration failed');
     }
   };
 
-  const inputClass = 'h-12 rounded-[5px] border-zinc-200 bg-zinc-50 focus:border-black focus:ring-0 text-sm font-medium placeholder:text-zinc-400';
+  const inputClass = 'h-12 rounded-[5px] border-zinc-200 bg-zinc-50 focus:border-black focus:ring-0 text-base md:text-sm font-medium placeholder:text-zinc-400';
   const labelClass = 'text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1.5 block';
   const errClass = 'text-red-500 text-[10px] mt-1 font-medium';
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-50/50 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-zinc-50/50 px-4 py-8 md:py-12">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-3xl border border-zinc-100 p-8 md:p-10 shadow-xl shadow-black/5">
+        <div className="bg-white rounded-3xl border border-zinc-100 p-6 sm:p-8 md:p-10 shadow-xl shadow-black/5">
           <div className="text-center mb-8">
             <img src="/images/teklito-logo.webp" alt="Teklito" className="h-8 w-auto mx-auto mb-6" />
             <h1 className="text-xl font-black uppercase tracking-tight text-black">Create Account</h1>
