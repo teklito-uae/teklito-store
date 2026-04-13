@@ -11,6 +11,14 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // ── Default User ──────────────────────────────────────────────
+        \App\Models\User::create([
+            'name' => 'Teklito UAE',
+            'email' => 'teklitouae@gmail.com',
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            'avatar' => 'teklito123',
+        ]);
+
         // ── Categories ────────────────────────────────────────────────
         $categories = [
             ['name' => 'Smartphones',       'slug' => 'smartphones',      'icon' => 'Smartphone',    'image' => '/images/categories/smartphones.webp',  'description' => 'Latest iPhones, Samsung, and more'],

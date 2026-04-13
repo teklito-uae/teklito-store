@@ -60,7 +60,8 @@ class ApiController extends Controller
         $subtotal = 0;
         foreach ($validated['items'] as $item) {
             $itemPrice = $item['price'] ?? $item['product']['price'] ?? 0;
-            $subtotal += $itemPrice * $item['quantity'];
+            $quantity = $item['quantity'] ?? 1;
+            $subtotal += (float)$itemPrice * (int)$quantity;
         }
 
         $shipping = $subtotal >= 200 ? 0 : 20;
@@ -100,7 +101,11 @@ class ApiController extends Controller
 
     public function getOrders(Request $request)
     {
-        $orders = Order::with('items')->where('user_id', $request->user()->id)->get();
+        $orders = Order::with('items.product')
+            ->where('user_id', $request->user()->id)
+            ->latest()
+            ->get();
+            
         return response()->json($orders);
     }
 
@@ -123,6 +128,7 @@ class ApiController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'avatar' => Str::random(8),
         ]);
 
         return response()->json([
@@ -141,7 +147,7 @@ class ApiController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['error' => 'Invalid credentials'], 401);
+            return response()->json(['message' => 'Invalid email or password. Please try again.'], 401);
         }
 
         return response()->json([
