@@ -1,0 +1,2 @@
+# Exclude generated sitemap — it is built on-demand via the /api/generate-sitemap endpoint
+sitemap.xml

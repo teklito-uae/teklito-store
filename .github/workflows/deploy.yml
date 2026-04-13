@@ -100,3 +100,12 @@ jobs:
           git add .
           git commit -m "🚀 Auto-build & Compilation: ${GITHUB_SHA::7}" || echo "No changes to commit"
           git push origin production
+
+      - name: Regenerate Sitemap on Production
+        run: |
+          echo "Triggering sitemap regeneration on teklito.store..."
+          curl -s --max-time 30 \
+            "https://teklito.store/api/generate-sitemap/${{ secrets.SITEMAP_KEY }}" \
+            -o /tmp/sitemap_response.json \
+            && cat /tmp/sitemap_response.json \
+            || echo "⚠️  Sitemap generation failed (non-blocking — check manually)"

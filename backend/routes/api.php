@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\ApiController;
+use App\Http\Controllers\SitemapController;
 
 Route::get('/setup-database', function () {
     try {
@@ -35,3 +36,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [ApiController::class, 'logout']);
     Route::get('/user/orders', [ApiController::class, 'getOrders']);
 });
+
+// Sitemap — secured by SITEMAP_KEY env variable (no auth middleware needed)
+Route::get('/generate-sitemap/{key}', [SitemapController::class, 'generate']);

@@ -123,4 +123,13 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Sitemap Secret Key
+    |--------------------------------------------------------------------------
+    | Used to authenticate the remote sitemap generation endpoint.
+    | Set SITEMAP_KEY in your .env to a strong random string (32+ chars).
+    */
+    'sitemap_key' => env('SITEMAP_KEY'),
+
 ];
