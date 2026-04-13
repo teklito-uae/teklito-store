@@ -24,16 +24,24 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (credentials) => {
         set({ isLoading: true });
-        const { user, token } = await apiLogin(credentials);
-        localStorage.setItem('auth_token', token);
-        set({ user, token, isAuthenticated: true, isLoading: false });
+        try {
+          const { user, token } = await apiLogin(credentials);
+          localStorage.setItem('auth_token', token);
+          set({ user, token, isAuthenticated: true });
+        } finally {
+          set({ isLoading: false });
+        }
       },
 
       register: async (data) => {
         set({ isLoading: true });
-        const { user, token } = await apiRegister(data);
-        localStorage.setItem('auth_token', token);
-        set({ user, token, isAuthenticated: true, isLoading: false });
+        try {
+          const { user, token } = await apiRegister(data);
+          localStorage.setItem('auth_token', token);
+          set({ user, token, isAuthenticated: true });
+        } finally {
+          set({ isLoading: false });
+        }
       },
 
       logout: async () => {
