@@ -41,6 +41,7 @@ jobs:
         working-directory: ./backend
         run: |
           composer install --optimize-autoloader --no-dev
+          php artisan package:discover --ansi || true
 
       - name: Prepare Hostinger Structure
         run: |
