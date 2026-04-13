@@ -66,7 +66,7 @@ export default function AppRouter() {
           <Route path="/login" element={<PageSuspense><LoginPage /></PageSuspense>} />
           <Route path="/register" element={<PageSuspense><RegisterPage /></PageSuspense>} />
           <Route path="/orders" element={<PageSuspense><ProtectedRoute><OrdersPage /></ProtectedRoute></PageSuspense>} />
-          <Route path="/track-order" element={<PageSuspense><TrackOrderPage /></PageSuspense>} />
+          <Route path="/track" element={<PageSuspense><TrackOrderPage /></PageSuspense>} />
           <Route path="/wishlist" element={<PageSuspense><WishlistPage /></PageSuspense>} />
           <Route path="/search" element={<PageSuspense><SearchPage /></PageSuspense>} />
           <Route path="/faq" element={<PageSuspense><FaqPage /></PageSuspense>} />
