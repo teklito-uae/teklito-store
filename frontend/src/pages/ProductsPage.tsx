@@ -30,15 +30,15 @@ export default function ProductsPage() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-3 mb-8 overflow-x-auto scrollbar-hide pb-1">
+        <div className="flex items-center gap-4 mb-8 overflow-x-auto scrollbar-hide pb-2">
           <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 shrink-0">Sort:</span>
           {sortOptions.map((opt) => (
             <button
               key={opt.value}
               onClick={() => setSearchParams({ sort: opt.value })}
               className={cn(
-                'px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-wider border shrink-0 transition-all',
-                sort === opt.value ? 'bg-black text-white border-black' : 'border-zinc-200 text-zinc-500 hover:border-black hover:text-black'
+                'px-5 py-3 rounded-full text-[10px] font-black uppercase tracking-wider border shrink-0 transition-all',
+                sort === opt.value ? 'bg-black text-white border-black shadow-lg shadow-black/10' : 'border-zinc-200 text-zinc-500 hover:border-black hover:text-black'
               )}
             >
               {opt.label}

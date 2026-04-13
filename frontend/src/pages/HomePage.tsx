@@ -337,24 +337,26 @@ export default function HomePage() {
       </section>
 
       {/* ── BRAND STRIP ─────────────────────────────────────────── */}
-      <div className="bg-white mx-3 md:mx-4 rounded-2xl my-2 shadow-sm overflow-hidden relative py-4">
-        <div className="pointer-events-none absolute left-0 top-0 h-full w-12 md:w-20 z-10 bg-gradient-to-r from-white to-transparent" />
-        <div className="pointer-events-none absolute right-0 top-0 h-full w-12 md:w-20 z-10 bg-gradient-to-l from-white to-transparent" />
-        <p className="text-center text-[8px] font-black uppercase tracking-[0.4em] text-zinc-300 mb-3">
+      <div className="bg-white mx-3 md:mx-4 rounded-2xl my-2 shadow-sm overflow-hidden relative py-5">
+        <div className="absolute inset-0 z-10 pointer-events-none" style={{ maskImage: 'linear-gradient(to right, transparent, black 15%, black 85%, transparent)' }}>
+          <div className="flex animate-marquee items-center whitespace-nowrap pt-6">
+            {[...brands, ...brands, ...brands].map((brand, i) => (
+              <div key={i} className="shrink-0 flex items-center">
+                <div className="flex items-center gap-1.5 px-5 py-2 mx-2 rounded-full border border-zinc-100 bg-zinc-50 hover:border-primary/30 hover:bg-primary/5 transition-all cursor-default group">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <span className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.2em] text-zinc-400 group-hover:text-zinc-700 transition-colors select-none">
+                    {brand}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="text-center text-[8px] font-black uppercase tracking-[0.4em] text-zinc-300 relative z-20">
           Top Brands
         </p>
-        <div className="flex animate-marquee items-center whitespace-nowrap">
-          {[...brands, ...brands].map((brand, i) => (
-            <div key={i} className="shrink-0 flex items-center">
-              <div className="flex items-center gap-1.5 px-4 py-1.5 mx-1 rounded-full border border-zinc-100 bg-zinc-50 hover:border-primary/30 hover:bg-primary/5 transition-all cursor-default group">
-                <span className="w-1 h-1 rounded-full bg-primary opacity-50 group-hover:opacity-100 transition-opacity" />
-                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 group-hover:text-zinc-700 transition-colors select-none">
-                  {brand}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+        {/* Reservation for height */}
+        <div className="h-12" />
       </div>
 
       {/* ── FEATURED DEALS ──────────────────────────────────────── */}

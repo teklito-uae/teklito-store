@@ -32,6 +32,20 @@ export default function ProductDetailPage() {
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [activeTab, setActiveTab] = useState<Tab>('Description');
 
+  const productImages = useMemo(() => {
+    if (!product) return [];
+    const imgs = product.images as any;
+    if (typeof imgs === 'string') {
+      try {
+        const parsed = JSON.parse(imgs);
+        return Array.isArray(parsed) ? parsed : [parsed];
+      } catch (e) {
+        return [imgs];
+      }
+    }
+    return Array.isArray(imgs) ? imgs : [];
+  }, [product]);
+
   const { data: allProducts = [] } = useProducts({ limit: 40 });
   const relatedProducts = useMemo(() =>
     allProducts.filter((p) => p.categorySlug === product?.categorySlug && p.id !== product?.id).slice(0, 6),
@@ -64,35 +78,35 @@ export default function ProductDetailPage() {
     <div className="min-h-screen bg-white">
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 mb-8">
-          <Link to="/products" className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-black transition-colors">
-            <ArrowLeft className="h-3.5 w-3.5" /> Products
+        <div className="flex items-center gap-2 mb-6 lg:mb-10">
+          <Link to="/products" className="inline-flex items-center gap-1.5 text-[9px] lg:text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-black transition-colors">
+            <ArrowLeft className="h-3 w-3 lg:h-3.5 lg:w-3.5" /> Products
           </Link>
           <span className="text-zinc-200">/</span>
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{product.category}</span>
+          <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-widest text-zinc-400">{product.category}</span>
           <span className="text-zinc-200">/</span>
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-600 line-clamp-1 max-w-[200px]">{product.name}</span>
+          <span className="text-[9px] lg:text-[10px] font-black uppercase tracking-widest text-zinc-600 line-clamp-1 max-w-[150px] lg:max-w-[300px]">{product.name}</span>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
           {/* ── Images ── */}
           <div className="space-y-4">
-            <div className="relative aspect-square bg-zinc-50 rounded-[2rem] overflow-hidden border border-zinc-100">
-              <AppImage src={product.images[selectedImage] || getImageUrl(product.images)} alt={product.name} fill className="object-contain p-8" />
+            <div className="relative aspect-square lg:aspect-[4/3] max-h-[420px] lg:max-h-[520px] bg-zinc-50 rounded-3xl lg:rounded-[2.5rem] overflow-hidden border border-zinc-100/50">
+              <AppImage src={productImages[selectedImage] || getImageUrl(productImages)} alt={product.name} fill className="object-contain p-6 md:p-12" />
               {product.discount && (
-                <Badge className="absolute top-4 left-4 bg-primary text-black font-black shadow-sm">-{product.discount}%</Badge>
+                <Badge className="absolute top-6 left-6 bg-primary text-black font-black shadow-sm ring-4 ring-white/10 px-3 py-1">-{product.discount}% OFF</Badge>
               )}
               {isLowStock && (
-                <Badge className="absolute top-4 right-4 bg-red-500 text-white font-black animate-pulse">Only {product.stock} left!</Badge>
+                <Badge className="absolute top-6 right-6 bg-red-500 text-white font-black animate-pulse px-3 py-1 shadow-md">Limited Stock</Badge>
               )}
             </div>
-            {product.images.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
-                {product.images.map((img, i) => (
+            {productImages.length > 1 && (
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2 mask-linear-right">
+                {productImages.map((img, i) => (
                   <button
                     key={i}
                     onClick={() => setSelectedImage(i)}
-                    className={cn('relative w-20 h-20 rounded-xl border-2 overflow-hidden shrink-0 transition-all', selectedImage === i ? 'border-primary' : 'border-zinc-100 hover:border-zinc-300')}
+                    className={cn('relative w-20 h-20 rounded-2xl border-2 overflow-hidden shrink-0 transition-all', selectedImage === i ? 'border-primary' : 'border-zinc-100 hover:border-zinc-300')}
                   >
                     <AppImage src={img} alt={`${product.name} ${i}`} fill className="object-contain p-2" />
                   </button>
@@ -102,17 +116,17 @@ export default function ProductDetailPage() {
           </div>
 
           {/* ── Info ── */}
-          <div className="space-y-5">
+          <div className="flex flex-col">
             {/* Category + Social proof */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">{product.category}</p>
-              <div className="flex items-center gap-1.5 text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
+              <div className="flex items-center gap-1.5 text-[9px] font-bold text-zinc-400 uppercase tracking-widest bg-zinc-50 px-2 py-1 rounded-full border border-zinc-100">
                 <Users className="h-3 w-3" />
-                {viewers} people viewing now
+                {viewers} Viewing
               </div>
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-black">{product.name}</h1>
+            <h1 className="text-2xl lg:text-3xl font-black uppercase tracking-tight text-black mb-3 leading-tight">{product.name}</h1>
 
             {/* Rating */}
             {product.rating > 0 && (
@@ -128,31 +142,24 @@ export default function ProductDetailPage() {
             )}
 
             {/* Price */}
-            <div>
-              <div className="flex items-baseline gap-3 mb-1">
-                <span className="text-3xl font-black text-black">AED {product.price.toFixed(2)}</span>
-                {product.originalPrice && product.originalPrice > product.price && (
-                  <span className="text-lg text-zinc-400 line-through">AED {product.originalPrice.toFixed(2)}</span>
+            <div className="flex items-center gap-4 py-2 border-y border-zinc-100/50 my-4">
+              <div>
+                <div className="flex items-baseline gap-3">
+                  <span className="text-3xl font-black text-black">AED {product.price.toFixed(2)}</span>
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <span className="text-lg text-zinc-400 line-through">AED {product.originalPrice.toFixed(2)}</span>
+                  )}
+                </div>
+                {savings > 0 && (
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Save AED {savings.toFixed(2)}</span>
                 )}
               </div>
-              {savings > 0 && (
-                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">You save AED {savings.toFixed(2)}</span>
-              )}
-            </div>
-
-            {/* Stock status */}
-            <div className={cn('inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest', product.inStock ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-500 border border-red-100')}>
-              <span className={cn('w-1.5 h-1.5 rounded-full', product.inStock ? 'bg-emerald-500 animate-pulse' : 'bg-red-500')} />
-              {product.inStock ? `In Stock (${product.stock} available)` : 'Out of Stock'}
-            </div>
-
-            {/* Flash low-stock warning */}
-            {isLowStock && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
-                <Zap className="h-4 w-4 text-red-500 shrink-0" />
-                <p className="text-xs font-black text-red-600 uppercase tracking-wide">Selling fast! Only {product.stock} units left.</p>
+              <div className="h-10 w-px bg-zinc-100 mx-1 lg:block hidden" />
+              <div className={cn('hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest', product.inStock ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500')}>
+                <span className={cn('w-1.5 h-1.5 rounded-full', product.inStock ? 'bg-emerald-500' : 'bg-red-500')} />
+                {product.inStock ? 'Ready for shipping' : 'Check back later'}
               </div>
-            )}
+            </div>
 
             {/* Variants */}
             {product.variants?.map((variant) => (
@@ -165,15 +172,17 @@ export default function ProductDetailPage() {
                       disabled={!opt.inStock}
                       onClick={() => setSelectedVariants((prev) => ({ ...prev, [variant.type]: opt.value }))}
                       className={cn(
-                        'px-4 py-2 rounded-[5px] border text-[11px] font-black uppercase tracking-wider transition-all',
+                        'px-4 py-2.5 rounded-xl border text-[11px] font-black uppercase tracking-wider transition-all duration-300',
                         selectedVariants[variant.type] === opt.value
-                          ? 'border-black bg-black text-white'
-                          : opt.inStock ? 'border-zinc-200 text-zinc-600 hover:border-black' : 'border-zinc-100 text-zinc-300 cursor-not-allowed line-through'
+                          ? 'border-black bg-black text-white shadow-md'
+                          : opt.inStock ? 'border-zinc-200 text-zinc-600 hover:border-black bg-white' : 'border-zinc-100 text-zinc-300 cursor-not-allowed bg-zinc-50/50'
                       )}
                     >
                       {opt.label}
                       {opt.priceModifier && opt.priceModifier > 0 && (
-                        <span className="ml-1 text-zinc-400 font-medium">+{opt.priceModifier}</span>
+                        <span className={cn('ml-1.5 font-bold', selectedVariants[variant.type] === opt.value ? 'text-primary' : 'text-zinc-400')}>
+                          +{opt.priceModifier}
+                        </span>
                       )}
                     </button>
                   ))}
@@ -182,33 +191,50 @@ export default function ProductDetailPage() {
             ))}
 
             {/* Quantity */}
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Quantity</p>
-              <div className="flex items-center gap-3">
-                <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="h-10 w-10 rounded-[5px] border border-zinc-200 flex items-center justify-center hover:bg-zinc-50 transition-colors">
-                  <Minus className="h-4 w-4" />
-                </button>
-                <span className="w-12 text-center font-black text-lg">{quantity}</span>
-                <button onClick={() => setQuantity(q => Math.min(product.stock || 99, q + 1))} className="h-10 w-10 rounded-[5px] border border-zinc-200 flex items-center justify-center hover:bg-zinc-50 transition-colors">
-                  <Plus className="h-4 w-4" />
-                </button>
+            <div className="flex items-center gap-6 py-2">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Quantity</p>
+                <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-2xl w-fit">
+                  <button 
+                    onClick={() => setQuantity(q => Math.max(1, q - 1))} 
+                    className="h-10 w-10 rounded-xl bg-zinc-900 text-primary flex items-center justify-center hover:bg-black active:scale-95 transition-all shadow-lg"
+                  >
+                    <Minus className="h-4 w-4 stroke-[3]" />
+                  </button>
+                  <span className="w-10 text-center font-black text-xl text-black">{quantity}</span>
+                  <button 
+                    onClick={() => setQuantity(q => Math.min(product.stock || 99, q + 1))} 
+                    className="h-10 w-10 rounded-xl bg-zinc-900 text-primary flex items-center justify-center hover:bg-black active:scale-95 transition-all shadow-lg"
+                  >
+                    <Plus className="h-4 w-4 stroke-[3]" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Stock status inline for web */}
+              <div className="flex-1 lg:block hidden">
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Availability</p>
+                <div className={cn('inline-flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest', product.inStock ? 'text-emerald-600' : 'text-red-500')}>
+                  <span className={cn('w-1.5 h-1.5 rounded-full', product.inStock ? 'bg-emerald-500 animate-pulse' : 'bg-red-500')} />
+                  {product.inStock ? `${product.stock} Units Available` : 'Out of Stock'}
+                </div>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3">
+            <div className="flex gap-4 pt-4">
               <Button
                 onClick={handleAddToCart}
                 disabled={!product.inStock}
-                className={cn('flex-1 h-14 text-[11px] font-black uppercase tracking-[0.2em] rounded-xl transition-all', inCart ? 'bg-primary text-black hover:bg-primary/90' : 'bg-black text-white hover:bg-zinc-800')}
+                className={cn('flex-1 h-14 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-lg transition-all', inCart ? 'bg-primary text-black hover:bg-primary/95' : 'bg-black text-white hover:bg-zinc-800')}
               >
                 <ShoppingCart className="h-4 w-4 mr-2" />
-                {inCart ? 'Added to Cart ✓' : 'Add to Cart'}
+                {inCart ? 'Checkout Now' : 'Add to Cart'}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => { toggleWishlist(product.id); toast.success(inWishlist ? 'Removed from wishlist' : 'Added to wishlist'); }}
-                className={cn('h-14 w-14 rounded-xl border-zinc-200', inWishlist && 'border-red-200 bg-red-50')}
+                className={cn('h-14 w-14 rounded-2xl border-zinc-200 hover:bg-zinc-50 transition-colors', inWishlist && 'border-red-200 bg-red-50 hover:bg-red-100/50')}
               >
                 <Heart className={cn('h-5 w-5', inWishlist ? 'fill-red-500 text-red-500' : 'text-zinc-400')} />
               </Button>
@@ -257,16 +283,16 @@ export default function ProductDetailPage() {
             )}
 
             {activeTab === 'Specifications' && (
-              <div className="grid sm:grid-cols-2 gap-3 max-w-2xl">
+              <div className="grid sm:grid-cols-2 gap-x-12 gap-y-2 max-w-3xl">
                 {[
                   { label: 'Brand', val: product.category },
-                  { label: 'Condition', val: 'Brand New' },
+                  { label: 'Condition', val: 'New' },
                   { label: 'Availability', val: product.inStock ? 'In Stock' : 'Out of Stock' },
-                  { label: 'SKU', val: product.id.slice(0, 8).toUpperCase() },
-                  { label: 'Rating', val: `${product.rating.toFixed(1)} / 5.0` },
-                  { label: 'Reviews', val: `${product.reviewCount} verified reviews` },
+                  { label: 'SKU', val: product.id?.slice(0, 8).toUpperCase() || 'N/A' },
+                  { label: 'Type', val: 'Official UAE Version' },
+                  { label: 'Warranty', val: '1 Year Manufacturer' },
                 ].map(({ label, val }) => (
-                  <div key={label} className="flex justify-between gap-4 py-3 border-b border-zinc-50 text-sm">
+                  <div key={label} className="flex justify-between items-center py-3 border-b border-zinc-100/50">
                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{label}</span>
                     <span className="font-bold text-black text-xs">{val}</span>
                   </div>

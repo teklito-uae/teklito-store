@@ -143,9 +143,9 @@ export default function CheckoutPage() {
         <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-black mb-8">Checkout</h1>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             {/* Shipping Form */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="md:col-span-2 space-y-6">
               <div className="bg-white rounded-2xl border border-zinc-100 p-6">
                 <h2 className="text-sm font-black uppercase tracking-widest text-black mb-5">Shipping Information</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -206,7 +206,7 @@ export default function CheckoutPage() {
             </div>
 
             {/* Order Summary */}
-            <div className="lg:col-span-1">
+            <div className="md:col-span-1">
               <div className="bg-white rounded-2xl border border-zinc-100 p-6 sticky top-24">
                 <h2 className="text-sm font-black uppercase tracking-widest text-black mb-5">Order Review</h2>
                 <div className="space-y-3 mb-5 max-h-60 overflow-y-auto scrollbar-hide">

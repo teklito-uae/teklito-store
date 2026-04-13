@@ -151,6 +151,10 @@
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  
+  .mask-linear-right {
+    mask-image: linear-gradient(to right, black 80%, transparent 100%);
+  }
 }
 
 @layer base {

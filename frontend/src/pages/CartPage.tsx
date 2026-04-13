@@ -239,6 +239,16 @@ export default function CartPage() {
           </div>
         </div>
       )}
+      {/* ── Sticky mobile CTA ── */}
+      <div className="lg:hidden fixed bottom-[64px] inset-x-0 p-3 bg-white/95 backdrop-blur-md border-t border-zinc-100 z-40">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <span className="text-[10px] font-black uppercase text-zinc-400">Estimated Total</span>
+          <span className="text-sm font-black text-black">AED {total.toFixed(2)}</span>
+        </div>
+        <Button onClick={() => user ? navigate('/checkout') : setShowGuestModal(true)} className="w-full h-12 bg-black text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-black/10">
+          Checkout <ArrowRight className="h-4 w-4 ml-2" />
+        </Button>
+      </div>
     </div>
   );
 }

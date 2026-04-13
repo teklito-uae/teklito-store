@@ -23,7 +23,7 @@ const toCamelCase = (str: string) => str.replace(/_([a-z])/g, (g) => g[1].toUppe
   const transformKeys = (obj: any): any => {
     if (Array.isArray(obj)) {
       return obj.map(v => transformKeys(v));
-    } else if (obj !== null && obj.constructor === Object) {
+    } else if (obj !== null && typeof obj === 'object') {
       return Object.keys(obj).reduce((result, key) => {
         result[toCamelCase(key)] = transformKeys(obj[key]);
         return result;
