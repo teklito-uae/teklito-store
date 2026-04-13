@@ -76,6 +76,19 @@ jobs:
           </IfModule>
           EOF
 
+          # 4. Inject production secrets into the backend .env
+          #    This ensures the server always has the correct values regardless of
+          #    what was previously on the Hostinger server.
+          ENV_FILE="_deployment/backend/.env"
+          if [ -f "$ENV_FILE" ]; then
+            # Remove any existing SITEMAP_KEY line and append the production value
+            sed -i '/^SITEMAP_KEY=/d' "$ENV_FILE"
+            echo "SITEMAP_KEY=${{ secrets.SITEMAP_KEY }}" >> "$ENV_FILE"
+            echo "✅ SITEMAP_KEY injected into production .env"
+          else
+            echo "⚠️  .env file not found at $ENV_FILE — skipping injection"
+          fi
+
       - name: Configure Git Bot
         run: |
           git config --global user.name "GitHub Actions Bot"
