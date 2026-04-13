@@ -55,22 +55,25 @@ jobs:
           mkdir -p _deployment/frontend
           cp -r frontend/dist _deployment/frontend/
           
-          # 3. Create intelligent routing at the domain root
           cat << 'EOF' > _deployment/.htaccess
           <IfModule mod_rewrite.c>
               RewriteEngine On
-              
-              # If the request starts with /api, pass it strictly to the Laravel index
+
+              # 1. API requests → Laravel backend
               RewriteCond %{REQUEST_URI} ^/api [NC]
               RewriteRule ^(.*)$ backend/public/$1 [L]
 
-              # If requesting an asset or static file in the frontend (e.g. /assets/js)
+              # 2. Backend public static files (sitemap.xml, robots.txt, storage/*, etc.)
+              #    If the file physically exists in backend/public/, serve it directly
+              RewriteCond %{DOCUMENT_ROOT}/backend/public/$1 -f
+              RewriteRule ^(.*)$ backend/public/$1 [L]
+
+              # 3. Frontend static assets (JS, CSS, images in dist/)
               RewriteCond %{DOCUMENT_ROOT}/frontend/dist/$1 -f [OR]
               RewriteCond %{DOCUMENT_ROOT}/frontend/dist/$1 -d
               RewriteRule ^(.*)$ frontend/dist/$1 [L]
 
-              # For any other web route (React Single Page App fallback), serve index.html
-              # This ensures refreshing /cart or /products doesn't crash Apache
+              # 4. Everything else → React SPA fallback (client-side routing)
               RewriteCond %{REQUEST_URI} !^/api [NC]
               RewriteCond %{REQUEST_URI} !^/backend/ [NC]
               RewriteRule ^(.*)$ frontend/dist/index.html [L]
