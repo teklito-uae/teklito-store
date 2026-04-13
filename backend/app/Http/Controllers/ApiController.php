@@ -59,7 +59,8 @@ class ApiController extends Controller
 
         $subtotal = 0;
         foreach ($validated['items'] as $item) {
-            $subtotal += $item['product']['price'] * $item['quantity'];
+            $itemPrice = $item['price'] ?? $item['product']['price'] ?? 0;
+            $subtotal += $itemPrice * $item['quantity'];
         }
 
         $shipping = $subtotal >= 200 ? 0 : 20;
@@ -79,12 +80,13 @@ class ApiController extends Controller
         ]);
 
         foreach ($validated['items'] as $item) {
+            $productData = $item['product'] ?? [];
             $order->items()->create([
-                'product_id' => $item['productId'],
-                'product_name' => $item['product']['name'],
-                'product_slug' => $item['product']['slug'] ?? null,
-                'quantity' => $item['quantity'],
-                'price' => $item['product']['price'],
+                'product_id' => $item['productId'] ?? null,
+                'product_name' => $productData['name'] ?? 'Product',
+                'product_slug' => $productData['slug'] ?? null,
+                'quantity' => $item['quantity'] ?? 1,
+                'price' => $productData['price'] ?? $item['price'] ?? 0,
                 'selected_variants' => $item['selectedVariants'] ?? null,
             ]);
         }
