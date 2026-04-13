@@ -14,7 +14,18 @@ class SitemapController extends Controller
      */
     public function generate(string $key): JsonResponse
     {
-        $validKey = config('app.sitemap_key');
+        // Clear config cache first so any .env changes are always reflected immediately.
+        // This is safe on an admin-only endpoint and fixes stale-cache issues on Hostinger.
+        try {
+            Artisan::call('config:clear');
+        } catch (\Throwable $e) {
+            // Non-fatal — continue even if cache clear fails
+        }
+
+        // Now read fresh from .env (cache is gone)
+        $validKey = config('app.sitemap_key')
+            ?: env('SITEMAP_KEY')
+            ?: ($_ENV['SITEMAP_KEY'] ?? getenv('SITEMAP_KEY') ?: null);
 
         // Missing key in .env — refuse all requests until configured
         if (! $validKey) {
