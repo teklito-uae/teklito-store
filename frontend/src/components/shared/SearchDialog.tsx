@@ -55,8 +55,8 @@ export default function SearchDialog({ open, onOpenChange, categories }: SearchD
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <Command shouldFilter={false} className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-input-wrapper]_svg]:hidden [&_[cmdk-input]]:h-0">
-      <div className="flex flex-col h-full md:h-auto bg-white overflow-hidden border-none shadow-none text-black">
+      <Command shouldFilter={false} className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-input-wrapper]_svg]:hidden [&_[cmdk-input]]:h-0 border-none">
+      <div className="flex flex-col h-[100dvh] md:h-auto md:max-h-[85vh] bg-white overflow-hidden border-none shadow-none text-black">
         <DialogTitle className="sr-only">Search Products</DialogTitle>
 
         <div className="flex items-center p-3 md:p-6 border-b border-zinc-100 bg-white sticky top-0 z-20 gap-2">

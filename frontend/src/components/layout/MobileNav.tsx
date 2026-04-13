@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Home, Search, ShoppingCart, Heart, User } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart';
 import { useWishlistStore } from '@/lib/store/wishlist';
+import { useSearchStore } from '@/lib/store/search';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -9,13 +10,14 @@ const navItems = [
   { label: 'Search', to: '/search', icon: Search },
   { label: 'Cart', to: '/cart', icon: ShoppingCart, badge: true, badgeType: 'cart' as const },
   { label: 'Wishlist', to: '/wishlist', icon: Heart, badge: true, badgeType: 'wishlist' as const },
-  { label: 'Account', to: '/login', icon: User },
+  { label: 'Account', to: '/profile', icon: User },
 ];
 
 export default function MobileNav() {
   const { pathname } = useLocation();
   const cartCount = useCartStore((s) => s.getItemCount());
   const wishlistCount = useWishlistStore((s) => s.getCount());
+  const openSearch = useSearchStore((s) => s.openSearch);
 
   const getBadge = (badgeType?: 'cart' | 'wishlist') => {
     if (badgeType === 'cart') return cartCount;
@@ -34,6 +36,12 @@ export default function MobileNav() {
             <Link
               key={to}
               to={to}
+              onClick={(e) => {
+                if (label === 'Search') {
+                  e.preventDefault();
+                  openSearch();
+                }
+              }}
               className={cn(
                 'flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all relative',
                 isActive ? 'text-black' : 'text-zinc-400 hover:text-zinc-600'

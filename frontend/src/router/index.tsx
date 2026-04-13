@@ -19,6 +19,7 @@ const OrdersPage = lazy(() => import('@/pages/OrdersPage'));
 const TrackOrderPage = lazy(() => import('@/pages/TrackOrderPage'));
 const WishlistPage = lazy(() => import('@/pages/WishlistPage'));
 const SearchPage = lazy(() => import('@/pages/SearchPage'));
+const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
 const FaqPage = lazy(() => import('@/pages/FaqPage'));
 const ContactPage = lazy(() => import('@/pages/ContactPage'));
 const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'));
@@ -69,6 +70,7 @@ export default function AppRouter() {
           <Route path="/track" element={<PageSuspense><TrackOrderPage /></PageSuspense>} />
           <Route path="/wishlist" element={<PageSuspense><WishlistPage /></PageSuspense>} />
           <Route path="/search" element={<PageSuspense><SearchPage /></PageSuspense>} />
+          <Route path="/profile" element={<PageSuspense><ProtectedRoute><ProfilePage /></ProtectedRoute></PageSuspense>} />
           <Route path="/faq" element={<PageSuspense><FaqPage /></PageSuspense>} />
           <Route path="/contact" element={<PageSuspense><ContactPage /></PageSuspense>} />
           <Route path="/privacy" element={<PageSuspense><PrivacyPage /></PageSuspense>} />

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { useCartStore } from '@/lib/store/cart';
 import { useWishlistStore } from '@/lib/store/wishlist';
+import { useSearchStore } from '@/lib/store/search';
 import CategorySidebar from '@/components/home/CategorySidebar';
 import SearchDialog from '@/components/shared/SearchDialog';
 import UserDropdown from '@/components/layout/UserDropdown';
@@ -17,7 +18,7 @@ interface HeaderProps {
 export default function Header({ categories }: HeaderProps) {
   const cartCount = useCartStore((s) => s.getItemCount());
   const wishlistCount = useWishlistStore((s) => s.getCount());
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { isOpen: isSearchOpen, setOpen: setIsSearchOpen } = useSearchStore();
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -39,7 +40,7 @@ export default function Header({ categories }: HeaderProps) {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [setIsSearchOpen]);
 
   const headerBg = isScrolled ? 'bg-black/95 backdrop-blur-md border-zinc-900' : 'bg-white border-zinc-100';
   const iconColor = isScrolled ? 'text-primary' : 'text-zinc-800';

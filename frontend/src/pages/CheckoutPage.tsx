@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuthStore } from '@/lib/store/auth';
 import { useCartStore, SHIPPING_THRESHOLD, STANDARD_SHIPPING_FEE } from '@/lib/store/cart';
@@ -58,11 +58,22 @@ export default function CheckoutPage() {
   const onSubmit = async (data: CheckoutForm) => {
     if (cartItems.length === 0) { toast.error('Your cart is empty'); return; }
     setIsSubmitting(true);
+    const itemsForApi = cartItems.map((item) => {
+      const product = item.product!; // Guaranteed by the filter above
+      return {
+        productId: item.productId,
+        quantity: item.quantity,
+        price: product.price,
+        product: product,
+        selectedVariants: item.selectedVariants,
+      };
+    });
+
     try {
       const result = await createOrder({
         shippingInfo: data,
         paymentMethod,
-        items: cartItems as any,
+        items: itemsForApi,
       });
       if (result.success && result.orderId) {
         clearCart();
@@ -76,6 +87,13 @@ export default function CheckoutPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Scroll to top on success
+  useEffect(() => {
+    if (orderSuccess) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [orderSuccess]);
 
   // Success screen
   if (orderSuccess) {
@@ -92,7 +110,7 @@ export default function CheckoutPage() {
         <div className="flex flex-col sm:flex-row gap-4">
           {user ? (
             <Button asChild className="h-12 px-6 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary hover:text-black transition-all">
-              <Link to="/orders">View My Orders</Link>
+              <Link to="/profile">View My Dashboard</Link>
             </Button>
           ) : (
             <Button asChild className="h-12 px-6 bg-black text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary hover:text-black transition-all">
