@@ -242,6 +242,17 @@
 
 ---
 
+### Phase 5 — Recent Work & Fixes (Authentication & Checkout)
+
+- **Unified Checkout**: Configured standard `/checkout` structure to completely support Guest Checkouts gracefully without throwing blocks.
+- **Cart Interstitial**: Added an elegant popup modal inside `CartPage.tsx` to prompt users to log in for speed, or bypass explicitly as a Guest.
+- **Form Auto-population**: Hydrated logic into the checkout parameters so registered users never have to type their name or email more than once.
+- **Guest Order Tracking**: Directed guests strictly to a dynamically seeded `/track?id=...` route using React Hook params, rather than barring them out via the walled `/orders` garden.
+- **Mobile Safari Font Zoom**: Prevented auto-zoom natively by hardening `text-base` global constraints directly onto all mobile input elements in Auth and Checkout pages.
+- **API Robustness**: Hardened the `createOrder` endpoint to handle missing or nested product data safely, preventing PHP "Undefined array key" errors during guest checkouts.
+
+---
+
 ## 📁 Implementation File Map
 
 | File | Changes |
@@ -255,8 +266,8 @@
 | `components/layout/AnnouncementBar.tsx` | Rotating messages, countdown |
 | `components/home/CategoryGrid.tsx` | Larger cards, product counts, colors |
 | `pages/TrackOrderPage.tsx` | Visual timeline, WhatsApp CTA |
-| `pages/LoginPage.tsx` | Split layout with social proof panel |
-| `pages/RegisterPage.tsx` | Split layout with social proof panel |
+| `pages/LoginPage.tsx` | Split layout with social proof panel, mobile zoom fix |
+| `pages/RegisterPage.tsx` | Split layout with social proof panel, mobile zoom fix |
 | `components/shared/LoadingSkeleton.tsx` | Hero skeleton, improved variants |
 | `components/shared/EmptyState.tsx` | **New component** — reusable empty states |
 | `index.css` | Scroll animation utilities, shine keyframes |
@@ -265,14 +276,14 @@
 
 ## 🎯 Priority Order (Quickest ROI First)
 
-1. ✅ **Product Card urgency badges** — Low effort, high impact
-2. ✅ **Hero Section redesign** — Visual wow factor drives trust instantly
-3. ✅ **Product Detail: related products + sticky mobile CTA** — Direct add-to-cart lift
-4. ✅ **Cart: savings chip + trust badges** — Reduces checkout abandonment
-5. ✅ **Announcement bar: rotating messages** — Sets tone on every page
-6. ✅ **Footer newsletter** — Email capture for remarketing
-7. ✅ **Mini cart popover** — Reduces navigation friction
-8. ✅ **Page entrance animations** — Premium feel, increases engagement time
+1. ✅ **Product Card urgency badges**
+2. ✅ **Hero Section redesign**
+3. ✅ **Product Detail: related products + sticky mobile CTA**
+4. ✅ **Cart: savings chip + trust badges**
+5. ✅ **Announcement bar: rotating messages**
+6. ✅ **Footer newsletter**
+7. ✅ **Mini cart popover**
+8. ✅ **Page entrance animations**
 
 ---
 
@@ -309,4 +320,4 @@
 
 ---
 
-*Plan created: April 2026 · Teklito Store Frontend Enhancement*
+*Plan updated: April 13th, 2026 · Teklito Store Enhancement History*
