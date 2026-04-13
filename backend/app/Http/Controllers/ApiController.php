@@ -111,7 +111,7 @@ class ApiController extends Controller
 
     public function getOrderById($idOrNumber)
     {
-        $order = Order::with('items')->where('id', $idOrNumber)->orWhere('order_number', $idOrNumber)->firstOrFail();
+        $order = Order::with('items.product')->where('id', $idOrNumber)->orWhere('order_number', $idOrNumber)->firstOrFail();
         return response()->json($order);
     }
 

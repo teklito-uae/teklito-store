@@ -3,7 +3,7 @@
         'name' => 'laravel/laravel',
         'pretty_version' => 'dev-teklito_dev',
         'version' => 'dev-teklito_dev',
-        'reference' => 'a13d377f867fefdef79e33854190e4fd497ed942',
+        'reference' => 'cfbd77198497a9ec18bffdceb39803e9321246bc',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -355,7 +355,7 @@
         'laravel/laravel' => array(
             'pretty_version' => 'dev-teklito_dev',
             'version' => 'dev-teklito_dev',
-            'reference' => 'a13d377f867fefdef79e33854190e4fd497ed942',
+            'reference' => 'cfbd77198497a9ec18bffdceb39803e9321246bc',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -1,0 +1,1 @@
+function e(e,t=`https://placehold.co/600x600/f4f4f5/9090b0?text=No+Image`){return!e||e.length===0?t:e[0]||t}export{e as t};

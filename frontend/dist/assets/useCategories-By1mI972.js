@@ -1,1 +1,0 @@
-import{t as e}from"./useQuery-B0mC1d7R.js";import{t}from"./api-CK9NazUV.js";var n=async()=>(await t.get(`/categories`)).data??[],r=async e=>(await t.get(`/categories/${e}`)).data??null,i=()=>e({queryKey:[`categories`],queryFn:n,staleTime:1e3*60*10}),a=t=>e({queryKey:[`category`,t],queryFn:()=>r(t),enabled:!!t,staleTime:1e3*60*10});export{a as n,i as t};
